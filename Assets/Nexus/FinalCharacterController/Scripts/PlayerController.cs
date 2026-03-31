@@ -9,6 +9,8 @@ namespace Nexus.FinalCharacterController
         [Header("Components")]
         [SerializeField] private CharacterController _characterController;
         [SerializeField] private Camera _playerCamera;
+        public float RotationMismatch { get; private set; } = 0f;
+        public bool IsRotatingToTarget { get; private set; } = false;
 
         [Header("Base Movement")]
         public float runAcceleration = 0.25f;
@@ -19,6 +21,11 @@ namespace Nexus.FinalCharacterController
         public float gravity = 25f;
         public float jumpSpeed = 1.0f;
         public float movingThreshold = 0.01f;
+
+        [Header("Animation")] 
+        public float playerModelRotationSpeed = 10f;
+
+        public float rotateToTargetTime = 0.25f;
 
         [Header("Camera Settings")]
         public float lookSenseH = 0.1f;
@@ -31,6 +38,8 @@ namespace Nexus.FinalCharacterController
         private Vector2 _cameraRotation = Vector2.zero;
         private Vector2 _playerTargetRotation = Vector2.zero;
 
+        private bool _isRotatingClockwise = false;
+        private float _rotatingToTargetTimer = 0f;
         private float _verticalVelocity = 0f;
         #endregion
         
@@ -118,13 +127,56 @@ namespace Nexus.FinalCharacterController
         #region Late Update Logic
         private void LateUpdate()
         {
+            UpdateCameraRotation();
+        }
+
+        private void UpdateCameraRotation()
+        {
             _cameraRotation.x += lookSenseH * _playerLocomotionInput.LookInput.x;
             _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookSenseV * _playerLocomotionInput.LookInput.y, -lookLimitV, lookLimitV);
 
             _playerTargetRotation.x += transform.eulerAngles.x + lookSenseH * _playerLocomotionInput.LookInput.x;
-            transform.rotation = Quaternion.Euler(0f, _playerTargetRotation.x, 0f);
+            
+            bool isIdling = _playerState.CurrentPlayerMovementState == PlayerMovementState.Idling;
+            IsRotatingToTarget = _rotatingToTargetTimer > 0;
+            float rotationTolerance = 90f;
+
+            if (!isIdling)
+            {
+                RotatePlayerToTarget();
+            }
+            else if (Mathf.Abs(RotationMismatch) > rotationTolerance || IsRotatingToTarget)
+            {
+                UpdateIdleRotation(rotationTolerance);
+            }
 
             _playerCamera.transform.rotation = Quaternion.Euler(_cameraRotation.y, _cameraRotation.x, 0f);
+            
+            Vector3 camForwardProjectedXZ = new Vector3(_playerCamera.transform.forward.x, 0f, _playerCamera.transform.forward.z).normalized;
+            Vector3 crossProduct = Vector3.Cross(transform.forward, camForwardProjectedXZ);
+            float sign = Mathf.Sign(Vector3.Dot(crossProduct, transform.up));
+            RotationMismatch = sign * Vector3.Angle(transform.forward, camForwardProjectedXZ);
+        }
+
+        private void UpdateIdleRotation(float rotationToTolerance)
+        {
+            if (Mathf.Abs(RotationMismatch) > rotationToTolerance)
+            {
+                _rotatingToTargetTimer = rotateToTargetTime;
+                _isRotatingClockwise = RotationMismatch > rotationToTolerance;
+            }
+            _rotatingToTargetTimer -= Time.deltaTime;
+
+            if (_isRotatingClockwise && RotationMismatch > 0f || !_isRotatingClockwise && RotationMismatch < 0f)
+            {
+                RotatePlayerToTarget();
+            }
+        }
+
+        private void RotatePlayerToTarget()
+        {
+            Quaternion targetRotationX = Quaternion.Euler(0f, _playerTargetRotation.x, 0f);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotationX, playerModelRotationSpeed * Time.deltaTime);
         }
         #endregion
         
