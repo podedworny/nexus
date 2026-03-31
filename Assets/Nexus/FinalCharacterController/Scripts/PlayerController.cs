@@ -16,6 +16,8 @@ namespace Nexus.FinalCharacterController
         public float sprintAcceleration = 0.5f;
         public float sprintSpeed = 7f;
         public float drag = 0.1f;
+        public float gravity = 25f;
+        public float jumpSpeed = 1.0f;
         public float movingThreshold = 0.01f;
 
         [Header("Camera Settings")]
@@ -28,6 +30,8 @@ namespace Nexus.FinalCharacterController
 
         private Vector2 _cameraRotation = Vector2.zero;
         private Vector2 _playerTargetRotation = Vector2.zero;
+
+        private float _verticalVelocity = 0f;
         #endregion
         
         #region Startup
@@ -42,6 +46,7 @@ namespace Nexus.FinalCharacterController
         private void Update()
         {
             UpdateMovementState();
+            HandleVerticalMovement();
             HandleLateralMovement();
         }
 
@@ -50,17 +55,44 @@ namespace Nexus.FinalCharacterController
             bool isMovementInput = _playerLocomotionInput.MovementInput != Vector2.zero;
             bool isMovingLaterally = IsMovingLaterally();
             bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally;
+            bool isGrounded = IsGrounded();
 
             PlayerMovementState lateralState = isSprinting ? PlayerMovementState.Sprinting : 
                 isMovingLaterally || isMovementInput
                 ? PlayerMovementState.Running
                 : PlayerMovementState.Idling;
             _playerState.SetPlayerMovementState(lateralState);
+
+            if (!isGrounded && _characterController.velocity.y >= 0f)
+            {
+                _playerState.SetPlayerMovementState(PlayerMovementState.Jumping);
+            }
+            else if (!isGrounded && _characterController.velocity.y < 0f)
+            {
+                _playerState.SetPlayerMovementState(PlayerMovementState.Falling);
+            }
+            
+        }
+
+        private void HandleVerticalMovement()
+        {
+            bool isGrounded = _playerState.InGroundedState();
+            
+            if (isGrounded && _verticalVelocity < 0f) 
+                _verticalVelocity = 0f;
+            
+            _verticalVelocity -= gravity * Time.deltaTime;
+            
+            if (_playerLocomotionInput.JumpPressed && isGrounded)
+            {
+                _verticalVelocity = Mathf.Sqrt(jumpSpeed * 3f * gravity);
+            }
         }
 
         private void HandleLateralMovement()
         {
             bool isSprinting = _playerState.CurrentPlayerMovementState == PlayerMovementState.Sprinting;
+            bool isGrounded = _playerState.InGroundedState();
             
             float lateralAcceleration = isSprinting ? sprintAcceleration : runAcceleration;
             float clampLateralMagnitude = isSprinting ? sprintSpeed : runSpeed; 
@@ -75,6 +107,8 @@ namespace Nexus.FinalCharacterController
             Vector3 currentDrag = newVelocity.normalized * drag * Time.deltaTime;
             newVelocity = (newVelocity.magnitude > drag * Time.deltaTime) ? newVelocity - currentDrag : Vector3.zero;
             newVelocity = Vector3.ClampMagnitude(newVelocity, clampLateralMagnitude);
+            newVelocity.y += _verticalVelocity;
+            
 
             _characterController.Move(newVelocity * Time.deltaTime);
         }
@@ -100,6 +134,11 @@ namespace Nexus.FinalCharacterController
             Vector3 lateralVelocity = new Vector3(_characterController.velocity.x, 0f, _characterController.velocity.z);
 
             return lateralVelocity.magnitude > movingThreshold;
+        }
+
+        private bool IsGrounded()
+        {
+            return _characterController.isGrounded;
         }
         #endregion
     }
