@@ -10,13 +10,20 @@ namespace Nexus.FinalCharacterController
         {
             CurrentPlayerMovementState = playerMovementState;
         }
-     
+
         public bool InGroundedState()
         {
-            return CurrentPlayerMovementState is PlayerMovementState.Idling or PlayerMovementState.Walking or PlayerMovementState.Running or PlayerMovementState.Sprinting;
+            return IsStateGroundedState(CurrentPlayerMovementState);
+        }
+
+        public bool IsStateGroundedState(PlayerMovementState movementState)
+        {
+            return movementState == PlayerMovementState.Idling ||
+                   movementState == PlayerMovementState.Walking ||
+                   movementState == PlayerMovementState.Running ||
+                   movementState == PlayerMovementState.Sprinting;
         }
     }
-    
     public enum PlayerMovementState
     {
         Idling = 0,
