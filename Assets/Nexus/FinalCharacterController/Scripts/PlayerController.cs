@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Nexus.FinalCharacterController
@@ -20,6 +21,7 @@ namespace Nexus.FinalCharacterController
         public float inAirAcceleration = 25f;
         public float drag = 20f;
         public float gravity = 25f;
+        public float terminalVelocity = 50f;
         public float jumpSpeed = 1.0f;
         public float movingThreshold = 0.01f;
 
@@ -77,7 +79,7 @@ namespace Nexus.FinalCharacterController
             bool canRun = CanRun();
             bool isMovementInput = _playerLocomotionInput.MovementInput != Vector2.zero;           
             bool isMovingLaterally = IsMovingLaterally();                                            
-            bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally;          
+            bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally && _playerLocomotionInput.MovementInput.y > 0;        
             bool isGrounded = IsGrounded();
 
             PlayerMovementState lateralState = isSprinting ? PlayerMovementState.Sprinting :
@@ -121,6 +123,11 @@ namespace Nexus.FinalCharacterController
             if (_playerState.IsStateGroundedState(_lastMovementState) && !isGrounded)
             {
                 _verticalVelocity += _antiBump;
+            }
+
+            if (Mathf.Abs(_verticalVelocity) > Mathf.Abs(terminalVelocity))
+            {
+                _verticalVelocity = -1f * Mathf.Abs(terminalVelocity);
             }
         }
 
