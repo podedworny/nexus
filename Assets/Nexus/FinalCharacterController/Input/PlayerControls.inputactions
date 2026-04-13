@@ -133,6 +133,82 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "ThirdPersonMap",
+            "id": "640e8b89-0b21-4b7f-aebb-e21e344cf15e",
+            "actions": [
+                {
+                    "name": "ScrollCamera",
+                    "type": "Value",
+                    "id": "4435bd8a-f161-43a4-b883-41748f999a9c",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "db447b2e-274c-4b37-8626-8205ef69b314",
+                    "path": "<Mouse>/scroll",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScrollCamera",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "PlayerActionMap",
+            "id": "d7e4ffbd-e613-4962-be79-dd2c82cd1f6c",
+            "actions": [
+                {
+                    "name": "Attack",
+                    "type": "Button",
+                    "id": "847eeff9-8418-4ed0-9558-f4e0376a421a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Gather",
+                    "type": "Button",
+                    "id": "dbaed346-5b6d-46cf-bd09-dd4ccca530fc",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "c5bcded3-0902-4a04-8f59-588619eb64e2",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "11dbce4c-d7a6-4bcc-b66c-2fbd922ad855",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Gather",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": []
