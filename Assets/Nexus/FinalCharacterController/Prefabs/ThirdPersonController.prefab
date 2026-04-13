@@ -825,13 +825,13 @@ MonoBehaviour:
   CameraSide: 1
   CameraDistance: 4
   AvoidObstacles:
-    Enabled: 0
+    Enabled: 1
     CollisionFilter:
       serializedVersion: 2
-      m_Bits: 1
+      m_Bits: 65
     IgnoreTag: 
     CameraRadius: 0.2
-    DampingIntoCollision: 0
+    DampingIntoCollision: 0.3
     DampingFromCollision: 0.5
 --- !u!114 &915164031684414420
 MonoBehaviour:
@@ -2434,7 +2434,7 @@ Transform:
   m_GameObject: {fileID: 4787113156291472939}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.5, y: -0.00000011920929, z: -3.9999998}
+  m_LocalPosition: {x: 0.5, y: 0.00000011920929, z: -4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3632,6 +3632,10 @@ GameObject:
   - component: {fileID: 8590058067923598486}
   - component: {fileID: 2977125059820823390}
   - component: {fileID: 3268432622901425110}
+  - component: {fileID: 51518095372549170}
+  - component: {fileID: 6925237658771076242}
+  - component: {fileID: 3783540476808454730}
+  - component: {fileID: 4201071591242143269}
   m_Layer: 9
   m_Name: ThirdPersonController
   m_TagString: Untagged
@@ -3699,7 +3703,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 1.8
-  m_Radius: 0.3
+  m_Radius: 0.225
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
@@ -3719,12 +3723,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController1
   _characterController: {fileID: 8590058067923598486}
   _playerCamera: {fileID: 8122615897509482881}
-  runAcceleration: 50
+  runAcceleration: 35
   runSpeed: 4
-  drag: 30
+  sprintAcceleration: 50
+  sprintSpeed: 7
+  inAirAcceleration: 25
+  drag: 20
+  gravity: 25
+  terminalVelocity: 50
+  jumpSpeed: 1
+  movingThreshold: 0.01
+  playerModelRotationSpeed: 10
+  rotateToTargetTime: 0.68
   lookSenseH: 0.1
   lookSenseV: 0.1
   lookLimitV: 70
+  _groundLayers:
+    serializedVersion: 2
+    m_Bits: 192
 --- !u!114 &3268432622901425110
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3737,6 +3753,62 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a737aa7a4f5761409d728ee2b6ce16b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerLocomotionInput
+  holdToSprint: 1
+--- !u!114 &51518095372549170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6502949697887956686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a230f033751efd4a8f56d4c1af54622, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimation
+  _animator: {fileID: 3310092520604334833}
+  locomotionBlendSpeed: 11
+--- !u!114 &6925237658771076242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6502949697887956686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c49d7c2b32972049a63810b4e6e044d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nexus.FinalCharacterController.PlayerState
+  <CurrentPlayerMovementState>k__BackingField: 0
+--- !u!114 &3783540476808454730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6502949697887956686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf08489998015e642bcda4450daefe36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nexus.FinalCharacterController.ThirdPersonInput
+  _virtualCamera: {fileID: 8093140672420181289}
+  _cameraZoomSpeed: 0.1
+  _cameraMinZoom: 1
+  _cameraMaxZoom: 5
+--- !u!114 &4201071591242143269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6502949697887956686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44508c201695eb648b6e43846510a4a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Nexus.FinalCharacterController.PlayerActionsInput
 --- !u!1 &6583790979324312201
 GameObject:
   m_ObjectHideFlags: 0

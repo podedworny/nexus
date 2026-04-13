@@ -20,6 +20,7 @@ namespace Nexus.FinalCharacterController
         public float sprintSpeed = 7f;
         public float inAirAcceleration = 25f;
         public float drag = 20f;
+        public float inAirDrag = 5f;
         public float gravity = 25f;
         public float terminalVelocity = 50f;
         public float jumpSpeed = 1.0f;
@@ -147,10 +148,11 @@ namespace Nexus.FinalCharacterController
             Vector3 cameraRightXZ = new Vector3(_playerCamera.transform.right.x, 0f, _playerCamera.transform.right.z).normalized;
             Vector3 movementDirection = cameraRightXZ * _playerLocomotionInput.MovementInput.x + cameraForwardXZ * _playerLocomotionInput.MovementInput.y;
 
-            Vector3 movementDelta = movementDirection * lateralAcceleration * Time.deltaTime;
+            Vector3 movementDelta = lateralAcceleration * Time.deltaTime * movementDirection;
             Vector3 newVelocity = _characterController.velocity + movementDelta;
 
-            Vector3 currentDrag = newVelocity.normalized * drag * Time.deltaTime;
+            float dragMagnitude = isGrounded ? drag : inAirDrag;
+            Vector3 currentDrag =  dragMagnitude * Time.deltaTime * newVelocity.normalized;
             newVelocity = (newVelocity.magnitude > drag * Time.deltaTime) ? newVelocity - currentDrag : Vector3.zero;
             newVelocity = Vector3.ClampMagnitude(new Vector3(newVelocity.x, 0f, newVelocity.z), clampLateralMagnitude);
             newVelocity.y += _verticalVelocity;
