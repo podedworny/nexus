@@ -69,6 +69,12 @@ namespace Nexus.FinalCharacterController
             Vector2 scrollInput = context.ReadValue<Vector2>();
             ScrollInput = -1f * scrollInput.normalized * _cameraZoomSpeed;
         }
+
+        public void OnAim(InputAction.CallbackContext context)
+        {
+            
+        }
+
         #endregion
     }
 }

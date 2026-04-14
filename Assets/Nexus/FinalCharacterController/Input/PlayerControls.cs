@@ -234,6 +234,15 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Aim"",
+                    ""type"": ""Button"",
+                    ""id"": ""cc594a07-9352-40ea-a2d9-7d5a66b9b5ec"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -245,6 +254,17 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""ScrollCamera"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""0c582ce8-56a3-4d6d-85b9-80c711b8524b"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Aim"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -310,6 +330,7 @@ namespace Nexus.FinalCharacterController
             // ThirdPersonMap
             m_ThirdPersonMap = asset.FindActionMap("ThirdPersonMap", throwIfNotFound: true);
             m_ThirdPersonMap_ScrollCamera = m_ThirdPersonMap.FindAction("ScrollCamera", throwIfNotFound: true);
+            m_ThirdPersonMap_Aim = m_ThirdPersonMap.FindAction("Aim", throwIfNotFound: true);
             // PlayerActionMap
             m_PlayerActionMap = asset.FindActionMap("PlayerActionMap", throwIfNotFound: true);
             m_PlayerActionMap_Attack = m_PlayerActionMap.FindAction("Attack", throwIfNotFound: true);
@@ -526,6 +547,7 @@ namespace Nexus.FinalCharacterController
         private readonly InputActionMap m_ThirdPersonMap;
         private List<IThirdPersonMapActions> m_ThirdPersonMapActionsCallbackInterfaces = new List<IThirdPersonMapActions>();
         private readonly InputAction m_ThirdPersonMap_ScrollCamera;
+        private readonly InputAction m_ThirdPersonMap_Aim;
         /// <summary>
         /// Provides access to input actions defined in input action map "ThirdPersonMap".
         /// </summary>
@@ -541,6 +563,10 @@ namespace Nexus.FinalCharacterController
             /// Provides access to the underlying input action "ThirdPersonMap/ScrollCamera".
             /// </summary>
             public InputAction @ScrollCamera => m_Wrapper.m_ThirdPersonMap_ScrollCamera;
+            /// <summary>
+            /// Provides access to the underlying input action "ThirdPersonMap/Aim".
+            /// </summary>
+            public InputAction @Aim => m_Wrapper.m_ThirdPersonMap_Aim;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -570,6 +596,9 @@ namespace Nexus.FinalCharacterController
                 @ScrollCamera.started += instance.OnScrollCamera;
                 @ScrollCamera.performed += instance.OnScrollCamera;
                 @ScrollCamera.canceled += instance.OnScrollCamera;
+                @Aim.started += instance.OnAim;
+                @Aim.performed += instance.OnAim;
+                @Aim.canceled += instance.OnAim;
             }
 
             /// <summary>
@@ -584,6 +613,9 @@ namespace Nexus.FinalCharacterController
                 @ScrollCamera.started -= instance.OnScrollCamera;
                 @ScrollCamera.performed -= instance.OnScrollCamera;
                 @ScrollCamera.canceled -= instance.OnScrollCamera;
+                @Aim.started -= instance.OnAim;
+                @Aim.performed -= instance.OnAim;
+                @Aim.canceled -= instance.OnAim;
             }
 
             /// <summary>
@@ -774,6 +806,13 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnScrollCamera(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Aim" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnAim(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "PlayerActionMap" which allows adding and removing callbacks.
