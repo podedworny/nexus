@@ -317,6 +317,94 @@ namespace Nexus.FinalCharacterController
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""CombatMap"",
+            ""id"": ""87fa1af5-0b36-4518-9145-62b73936b699"",
+            ""actions"": [
+                {
+                    ""name"": ""Weapon1"",
+                    ""type"": ""Button"",
+                    ""id"": ""1fc47e97-e09e-4c5b-afd9-f7e7f9e80036"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Weapon2"",
+                    ""type"": ""Button"",
+                    ""id"": ""868faae7-d153-4bf1-b99b-b53add5f7887"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Weapon3"",
+                    ""type"": ""Button"",
+                    ""id"": ""efd771b3-b954-405d-b9b1-66cf25471c64"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Aim"",
+                    ""type"": ""Button"",
+                    ""id"": ""dc88df83-c28c-4516-9ceb-11293f4104e3"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""e63ddaba-1e3a-4e3c-80db-875729bfbfb5"",
+                    ""path"": ""<Keyboard>/1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Weapon1"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""c50e7913-363f-4877-b134-b293b15c4eb7"",
+                    ""path"": ""<Keyboard>/2"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Weapon2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d04197f9-14d2-431f-a6bc-2dfb328b7eb0"",
+                    ""path"": ""<Keyboard>/3"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Weapon3"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""583a4a2f-2c3d-46db-b0ef-f918528222b1"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Aim"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -335,6 +423,12 @@ namespace Nexus.FinalCharacterController
             m_PlayerActionMap = asset.FindActionMap("PlayerActionMap", throwIfNotFound: true);
             m_PlayerActionMap_Attack = m_PlayerActionMap.FindAction("Attack", throwIfNotFound: true);
             m_PlayerActionMap_Gather = m_PlayerActionMap.FindAction("Gather", throwIfNotFound: true);
+            // CombatMap
+            m_CombatMap = asset.FindActionMap("CombatMap", throwIfNotFound: true);
+            m_CombatMap_Weapon1 = m_CombatMap.FindAction("Weapon1", throwIfNotFound: true);
+            m_CombatMap_Weapon2 = m_CombatMap.FindAction("Weapon2", throwIfNotFound: true);
+            m_CombatMap_Weapon3 = m_CombatMap.FindAction("Weapon3", throwIfNotFound: true);
+            m_CombatMap_Aim = m_CombatMap.FindAction("Aim", throwIfNotFound: true);
         }
 
         ~@PlayerControls()
@@ -342,6 +436,7 @@ namespace Nexus.FinalCharacterController
             UnityEngine.Debug.Assert(!m_PlayerLocomotionMap.enabled, "This will cause a leak and performance issues, PlayerControls.PlayerLocomotionMap.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_ThirdPersonMap.enabled, "This will cause a leak and performance issues, PlayerControls.ThirdPersonMap.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_PlayerActionMap.enabled, "This will cause a leak and performance issues, PlayerControls.PlayerActionMap.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_CombatMap.enabled, "This will cause a leak and performance issues, PlayerControls.CombatMap.Disable() has not been called.");
         }
 
         /// <summary>
@@ -756,6 +851,135 @@ namespace Nexus.FinalCharacterController
         /// Provides a new <see cref="PlayerActionMapActions" /> instance referencing this action map.
         /// </summary>
         public PlayerActionMapActions @PlayerActionMap => new PlayerActionMapActions(this);
+
+        // CombatMap
+        private readonly InputActionMap m_CombatMap;
+        private List<ICombatMapActions> m_CombatMapActionsCallbackInterfaces = new List<ICombatMapActions>();
+        private readonly InputAction m_CombatMap_Weapon1;
+        private readonly InputAction m_CombatMap_Weapon2;
+        private readonly InputAction m_CombatMap_Weapon3;
+        private readonly InputAction m_CombatMap_Aim;
+        /// <summary>
+        /// Provides access to input actions defined in input action map "CombatMap".
+        /// </summary>
+        public struct CombatMapActions
+        {
+            private @PlayerControls m_Wrapper;
+
+            /// <summary>
+            /// Construct a new instance of the input action map wrapper class.
+            /// </summary>
+            public CombatMapActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Weapon1".
+            /// </summary>
+            public InputAction @Weapon1 => m_Wrapper.m_CombatMap_Weapon1;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Weapon2".
+            /// </summary>
+            public InputAction @Weapon2 => m_Wrapper.m_CombatMap_Weapon2;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Weapon3".
+            /// </summary>
+            public InputAction @Weapon3 => m_Wrapper.m_CombatMap_Weapon3;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Aim".
+            /// </summary>
+            public InputAction @Aim => m_Wrapper.m_CombatMap_Aim;
+            /// <summary>
+            /// Provides access to the underlying input action map instance.
+            /// </summary>
+            public InputActionMap Get() { return m_Wrapper.m_CombatMap; }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+            public void Enable() { Get().Enable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+            public void Disable() { Get().Disable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+            public bool enabled => Get().enabled;
+            /// <summary>
+            /// Implicitly converts an <see ref="CombatMapActions" /> to an <see ref="InputActionMap" /> instance.
+            /// </summary>
+            public static implicit operator InputActionMap(CombatMapActions set) { return set.Get(); }
+            /// <summary>
+            /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <param name="instance">Callback instance.</param>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+            /// </remarks>
+            /// <seealso cref="CombatMapActions" />
+            public void AddCallbacks(ICombatMapActions instance)
+            {
+                if (instance == null || m_Wrapper.m_CombatMapActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_CombatMapActionsCallbackInterfaces.Add(instance);
+                @Weapon1.started += instance.OnWeapon1;
+                @Weapon1.performed += instance.OnWeapon1;
+                @Weapon1.canceled += instance.OnWeapon1;
+                @Weapon2.started += instance.OnWeapon2;
+                @Weapon2.performed += instance.OnWeapon2;
+                @Weapon2.canceled += instance.OnWeapon2;
+                @Weapon3.started += instance.OnWeapon3;
+                @Weapon3.performed += instance.OnWeapon3;
+                @Weapon3.canceled += instance.OnWeapon3;
+                @Aim.started += instance.OnAim;
+                @Aim.performed += instance.OnAim;
+                @Aim.canceled += instance.OnAim;
+            }
+
+            /// <summary>
+            /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <remarks>
+            /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+            /// </remarks>
+            /// <seealso cref="CombatMapActions" />
+            private void UnregisterCallbacks(ICombatMapActions instance)
+            {
+                @Weapon1.started -= instance.OnWeapon1;
+                @Weapon1.performed -= instance.OnWeapon1;
+                @Weapon1.canceled -= instance.OnWeapon1;
+                @Weapon2.started -= instance.OnWeapon2;
+                @Weapon2.performed -= instance.OnWeapon2;
+                @Weapon2.canceled -= instance.OnWeapon2;
+                @Weapon3.started -= instance.OnWeapon3;
+                @Weapon3.performed -= instance.OnWeapon3;
+                @Weapon3.canceled -= instance.OnWeapon3;
+                @Aim.started -= instance.OnAim;
+                @Aim.performed -= instance.OnAim;
+                @Aim.canceled -= instance.OnAim;
+            }
+
+            /// <summary>
+            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="CombatMapActions.UnregisterCallbacks(ICombatMapActions)" />.
+            /// </summary>
+            /// <seealso cref="CombatMapActions.UnregisterCallbacks(ICombatMapActions)" />
+            public void RemoveCallbacks(ICombatMapActions instance)
+            {
+                if (m_Wrapper.m_CombatMapActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            /// <summary>
+            /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+            /// </summary>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+            /// </remarks>
+            /// <seealso cref="CombatMapActions.AddCallbacks(ICombatMapActions)" />
+            /// <seealso cref="CombatMapActions.RemoveCallbacks(ICombatMapActions)" />
+            /// <seealso cref="CombatMapActions.UnregisterCallbacks(ICombatMapActions)" />
+            public void SetCallbacks(ICombatMapActions instance)
+            {
+                foreach (var item in m_Wrapper.m_CombatMapActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_CombatMapActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        /// <summary>
+        /// Provides a new <see cref="CombatMapActions" /> instance referencing this action map.
+        /// </summary>
+        public CombatMapActions @CombatMap => new CombatMapActions(this);
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "PlayerLocomotionMap" which allows adding and removing callbacks.
         /// </summary>
@@ -835,6 +1059,42 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnGather(InputAction.CallbackContext context);
+        }
+        /// <summary>
+        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "CombatMap" which allows adding and removing callbacks.
+        /// </summary>
+        /// <seealso cref="CombatMapActions.AddCallbacks(ICombatMapActions)" />
+        /// <seealso cref="CombatMapActions.RemoveCallbacks(ICombatMapActions)" />
+        public interface ICombatMapActions
+        {
+            /// <summary>
+            /// Method invoked when associated input action "Weapon1" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnWeapon1(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Weapon2" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnWeapon2(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Weapon3" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnWeapon3(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Aim" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnAim(InputAction.CallbackContext context);
         }
     }
 }

@@ -72,7 +72,6 @@ namespace Nexus.FinalCharacterController
 
         public void OnAim(InputAction.CallbackContext context)
         {
-            
         }
 
         #endregion
