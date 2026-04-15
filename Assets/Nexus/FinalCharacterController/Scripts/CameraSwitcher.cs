@@ -11,6 +11,7 @@ public class CameraSwitcher : MonoBehaviour, PlayerControls.IThirdPersonMapActio
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private LayerMask _tppMask;
     [SerializeField] private LayerMask _fppMask;
+    [SerializeField] private PlayerController _playerController;
 
     [Tooltip("Czas w sekundach po którym głowa zniknie. Ustaw na taki sam, jak czas przejścia w Cinemachine Brain.")]
     [SerializeField] private float _hideHeadDelay = 0.3f;
@@ -39,6 +40,8 @@ public class CameraSwitcher : MonoBehaviour, PlayerControls.IThirdPersonMapActio
             _tppCamera.SetActive(false);
             _fppCamera.SetActive(true);
             
+            if (_playerController != null) _playerController.IsAiming = true;
+            
             if (_hideHeadCoroutine != null) StopCoroutine(_hideHeadCoroutine);
             _hideHeadCoroutine = StartCoroutine(HideHeadAfterDelay());
         }
@@ -46,6 +49,8 @@ public class CameraSwitcher : MonoBehaviour, PlayerControls.IThirdPersonMapActio
         {
             _fppCamera.SetActive(false);
             _tppCamera.SetActive(true);
+            
+            if (_playerController != null) _playerController.IsAiming = false;
             
             if (_hideHeadCoroutine != null) StopCoroutine(_hideHeadCoroutine);
             

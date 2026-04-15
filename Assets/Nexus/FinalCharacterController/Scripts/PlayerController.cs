@@ -12,6 +12,7 @@ namespace Nexus.FinalCharacterController
         [SerializeField] private Camera _playerCamera;
         public float RotationMismatch { get; private set; } = 0f;
         public bool IsRotatingToTarget { get; private set; } = false;
+        public bool IsAiming { get; set; } = false;
 
         [Header("Base Movement")]
         public float runAcceleration = 35f;
@@ -191,7 +192,11 @@ namespace Nexus.FinalCharacterController
             bool isIdling = _playerState.CurrentPlayerMovementState == PlayerMovementState.Idling;
             IsRotatingToTarget = _rotatingToTargetTimer > 0;
 
-            if (!isIdling)
+            if (IsAiming)
+            {
+                transform.rotation = Quaternion.Euler(0f, _cameraRotation.x, 0f);
+            }
+            else if (!isIdling)
             {
                 RotatePlayerToTarget();
             }
