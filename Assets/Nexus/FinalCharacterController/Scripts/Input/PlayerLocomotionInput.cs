@@ -78,6 +78,10 @@ namespace Nexus.FinalCharacterController
             JumpPressed = true;
         }
         #endregion
-    }
 
+        public void ForceStopSprint()
+        {
+            SprintToggledOn = false;
+        }
+    }
 }

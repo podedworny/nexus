@@ -357,6 +357,24 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Weapon4"",
+                    ""type"": ""Button"",
+                    ""id"": ""2d5baf76-9a78-4c4e-bb39-d689b6c53148"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Weapon5"",
+                    ""type"": ""Button"",
+                    ""id"": ""9fde54ad-b509-48b6-8be7-57f4adbbdf42"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -403,6 +421,56 @@ namespace Nexus.FinalCharacterController
                     ""action"": ""Aim"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""eb2e17c8-60a0-40c2-b0c2-7f6a28bb1ae1"",
+                    ""path"": ""<Keyboard>/4"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Weapon4"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b53a01be-1e88-4d7f-acf0-73da75b6a17c"",
+                    ""path"": ""<Keyboard>/5"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Weapon5"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
+        },
+        {
+            ""name"": ""InventoryMap"",
+            ""id"": ""80e144bf-ab80-447a-812c-95f40f142ccf"",
+            ""actions"": [
+                {
+                    ""name"": ""ToggleInventory"",
+                    ""type"": ""Button"",
+                    ""id"": ""979616dd-affb-4fbc-9f61-3fb0e26d621f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""a8e688d4-9515-441a-abc6-0248043e0a55"",
+                    ""path"": ""<Keyboard>/i"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToggleInventory"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -429,6 +497,11 @@ namespace Nexus.FinalCharacterController
             m_CombatMap_Weapon2 = m_CombatMap.FindAction("Weapon2", throwIfNotFound: true);
             m_CombatMap_Weapon3 = m_CombatMap.FindAction("Weapon3", throwIfNotFound: true);
             m_CombatMap_Aim = m_CombatMap.FindAction("Aim", throwIfNotFound: true);
+            m_CombatMap_Weapon4 = m_CombatMap.FindAction("Weapon4", throwIfNotFound: true);
+            m_CombatMap_Weapon5 = m_CombatMap.FindAction("Weapon5", throwIfNotFound: true);
+            // InventoryMap
+            m_InventoryMap = asset.FindActionMap("InventoryMap", throwIfNotFound: true);
+            m_InventoryMap_ToggleInventory = m_InventoryMap.FindAction("ToggleInventory", throwIfNotFound: true);
         }
 
         ~@PlayerControls()
@@ -437,6 +510,7 @@ namespace Nexus.FinalCharacterController
             UnityEngine.Debug.Assert(!m_ThirdPersonMap.enabled, "This will cause a leak and performance issues, PlayerControls.ThirdPersonMap.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_PlayerActionMap.enabled, "This will cause a leak and performance issues, PlayerControls.PlayerActionMap.Disable() has not been called.");
             UnityEngine.Debug.Assert(!m_CombatMap.enabled, "This will cause a leak and performance issues, PlayerControls.CombatMap.Disable() has not been called.");
+            UnityEngine.Debug.Assert(!m_InventoryMap.enabled, "This will cause a leak and performance issues, PlayerControls.InventoryMap.Disable() has not been called.");
         }
 
         /// <summary>
@@ -859,6 +933,8 @@ namespace Nexus.FinalCharacterController
         private readonly InputAction m_CombatMap_Weapon2;
         private readonly InputAction m_CombatMap_Weapon3;
         private readonly InputAction m_CombatMap_Aim;
+        private readonly InputAction m_CombatMap_Weapon4;
+        private readonly InputAction m_CombatMap_Weapon5;
         /// <summary>
         /// Provides access to input actions defined in input action map "CombatMap".
         /// </summary>
@@ -886,6 +962,14 @@ namespace Nexus.FinalCharacterController
             /// Provides access to the underlying input action "CombatMap/Aim".
             /// </summary>
             public InputAction @Aim => m_Wrapper.m_CombatMap_Aim;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Weapon4".
+            /// </summary>
+            public InputAction @Weapon4 => m_Wrapper.m_CombatMap_Weapon4;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Weapon5".
+            /// </summary>
+            public InputAction @Weapon5 => m_Wrapper.m_CombatMap_Weapon5;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -924,6 +1008,12 @@ namespace Nexus.FinalCharacterController
                 @Aim.started += instance.OnAim;
                 @Aim.performed += instance.OnAim;
                 @Aim.canceled += instance.OnAim;
+                @Weapon4.started += instance.OnWeapon4;
+                @Weapon4.performed += instance.OnWeapon4;
+                @Weapon4.canceled += instance.OnWeapon4;
+                @Weapon5.started += instance.OnWeapon5;
+                @Weapon5.performed += instance.OnWeapon5;
+                @Weapon5.canceled += instance.OnWeapon5;
             }
 
             /// <summary>
@@ -947,6 +1037,12 @@ namespace Nexus.FinalCharacterController
                 @Aim.started -= instance.OnAim;
                 @Aim.performed -= instance.OnAim;
                 @Aim.canceled -= instance.OnAim;
+                @Weapon4.started -= instance.OnWeapon4;
+                @Weapon4.performed -= instance.OnWeapon4;
+                @Weapon4.canceled -= instance.OnWeapon4;
+                @Weapon5.started -= instance.OnWeapon5;
+                @Weapon5.performed -= instance.OnWeapon5;
+                @Weapon5.canceled -= instance.OnWeapon5;
             }
 
             /// <summary>
@@ -980,6 +1076,102 @@ namespace Nexus.FinalCharacterController
         /// Provides a new <see cref="CombatMapActions" /> instance referencing this action map.
         /// </summary>
         public CombatMapActions @CombatMap => new CombatMapActions(this);
+
+        // InventoryMap
+        private readonly InputActionMap m_InventoryMap;
+        private List<IInventoryMapActions> m_InventoryMapActionsCallbackInterfaces = new List<IInventoryMapActions>();
+        private readonly InputAction m_InventoryMap_ToggleInventory;
+        /// <summary>
+        /// Provides access to input actions defined in input action map "InventoryMap".
+        /// </summary>
+        public struct InventoryMapActions
+        {
+            private @PlayerControls m_Wrapper;
+
+            /// <summary>
+            /// Construct a new instance of the input action map wrapper class.
+            /// </summary>
+            public InventoryMapActions(@PlayerControls wrapper) { m_Wrapper = wrapper; }
+            /// <summary>
+            /// Provides access to the underlying input action "InventoryMap/ToggleInventory".
+            /// </summary>
+            public InputAction @ToggleInventory => m_Wrapper.m_InventoryMap_ToggleInventory;
+            /// <summary>
+            /// Provides access to the underlying input action map instance.
+            /// </summary>
+            public InputActionMap Get() { return m_Wrapper.m_InventoryMap; }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
+            public void Enable() { Get().Enable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
+            public void Disable() { Get().Disable(); }
+            /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
+            public bool enabled => Get().enabled;
+            /// <summary>
+            /// Implicitly converts an <see ref="InventoryMapActions" /> to an <see ref="InputActionMap" /> instance.
+            /// </summary>
+            public static implicit operator InputActionMap(InventoryMapActions set) { return set.Get(); }
+            /// <summary>
+            /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <param name="instance">Callback instance.</param>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
+            /// </remarks>
+            /// <seealso cref="InventoryMapActions" />
+            public void AddCallbacks(IInventoryMapActions instance)
+            {
+                if (instance == null || m_Wrapper.m_InventoryMapActionsCallbackInterfaces.Contains(instance)) return;
+                m_Wrapper.m_InventoryMapActionsCallbackInterfaces.Add(instance);
+                @ToggleInventory.started += instance.OnToggleInventory;
+                @ToggleInventory.performed += instance.OnToggleInventory;
+                @ToggleInventory.canceled += instance.OnToggleInventory;
+            }
+
+            /// <summary>
+            /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
+            /// </summary>
+            /// <remarks>
+            /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
+            /// </remarks>
+            /// <seealso cref="InventoryMapActions" />
+            private void UnregisterCallbacks(IInventoryMapActions instance)
+            {
+                @ToggleInventory.started -= instance.OnToggleInventory;
+                @ToggleInventory.performed -= instance.OnToggleInventory;
+                @ToggleInventory.canceled -= instance.OnToggleInventory;
+            }
+
+            /// <summary>
+            /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="InventoryMapActions.UnregisterCallbacks(IInventoryMapActions)" />.
+            /// </summary>
+            /// <seealso cref="InventoryMapActions.UnregisterCallbacks(IInventoryMapActions)" />
+            public void RemoveCallbacks(IInventoryMapActions instance)
+            {
+                if (m_Wrapper.m_InventoryMapActionsCallbackInterfaces.Remove(instance))
+                    UnregisterCallbacks(instance);
+            }
+
+            /// <summary>
+            /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
+            /// </summary>
+            /// <remarks>
+            /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
+            /// </remarks>
+            /// <seealso cref="InventoryMapActions.AddCallbacks(IInventoryMapActions)" />
+            /// <seealso cref="InventoryMapActions.RemoveCallbacks(IInventoryMapActions)" />
+            /// <seealso cref="InventoryMapActions.UnregisterCallbacks(IInventoryMapActions)" />
+            public void SetCallbacks(IInventoryMapActions instance)
+            {
+                foreach (var item in m_Wrapper.m_InventoryMapActionsCallbackInterfaces)
+                    UnregisterCallbacks(item);
+                m_Wrapper.m_InventoryMapActionsCallbackInterfaces.Clear();
+                AddCallbacks(instance);
+            }
+        }
+        /// <summary>
+        /// Provides a new <see cref="InventoryMapActions" /> instance referencing this action map.
+        /// </summary>
+        public InventoryMapActions @InventoryMap => new InventoryMapActions(this);
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "PlayerLocomotionMap" which allows adding and removing callbacks.
         /// </summary>
@@ -1095,6 +1287,35 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnAim(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Weapon4" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnWeapon4(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Weapon5" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnWeapon5(InputAction.CallbackContext context);
+        }
+        /// <summary>
+        /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InventoryMap" which allows adding and removing callbacks.
+        /// </summary>
+        /// <seealso cref="InventoryMapActions.AddCallbacks(IInventoryMapActions)" />
+        /// <seealso cref="InventoryMapActions.RemoveCallbacks(IInventoryMapActions)" />
+        public interface IInventoryMapActions
+        {
+            /// <summary>
+            /// Method invoked when associated input action "ToggleInventory" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnToggleInventory(InputAction.CallbackContext context);
         }
     }
 }
