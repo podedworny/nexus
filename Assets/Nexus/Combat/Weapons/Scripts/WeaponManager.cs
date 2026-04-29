@@ -9,21 +9,45 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     [SerializeField] private Animator _animator;
     [SerializeField] private UIManager _uiManager;
     [SerializeField] private InventoryManager _inventoryManager;
+    [SerializeField] private Transform _firstPersonAimCamera;
     
     public bool naZywoUstawianieBroni = false;
+    public float cameraTransitionSpeed = 15f;
+    public LineRenderer bulletTrailPrefab;
+    public float combatReadyDuration = 2.0f; 
     
     private GameObject _currentWeaponObject;
     private int _currentIndex = -1;
-    private bool _isAiming = false;
+    private bool _isAimingInput = false;
+    private bool _isShooting = false;
+    private bool _hasFiredThisClick = false;
+    private Vector3 _defaultCameraLocalPos;
+
+    private float _nextFireTime = 0f;
+    private bool _isReloading = false;
+    private float _reloadTimer = 0f;
+    private float _combatReadyTimer = 0f;
+    private int[] _ammoInSlots = new int[5];
+    private int[] _reserveAmmo = new int[5];
+    private bool[] _initializedAmmo = new bool[5];
+
+    private PlayerController _playerController;
+    private PlayerState _playerState;
 
     public int CurrentWeaponIndex => _currentIndex;
+    public bool IsReloading => _isReloading;
+
+    private void Awake()
+    {
+        _playerController = GetComponent<PlayerController>();
+        _playerState = GetComponent<PlayerState>();
+    }
 
     private void OnEnable()
     {
         if (Nexus.FinalCharacterController.PlayerInputManager.Instance?.PlayerControls == null) return;
         Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.CombatMap.Enable();
         Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.CombatMap.SetCallbacks(this);
-
         if (_inventoryManager != null) _inventoryManager.OnItemsSwapped += HandleItemsSwapped;
     }
 
@@ -31,17 +55,30 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         if (Nexus.FinalCharacterController.PlayerInputManager.Instance?.PlayerControls == null) return;
         Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.CombatMap.RemoveCallbacks(this);
-
         if (_inventoryManager != null) _inventoryManager.OnItemsSwapped -= HandleItemsSwapped;
     }
 
     private void Start()
     {
+        if (_firstPersonAimCamera != null) _defaultCameraLocalPos = _firstPersonAimCamera.localPosition;
         UnequipCurrent();
     }
 
     private void Update()
     {
+        if (_combatReadyTimer > 0f) _combatReadyTimer -= Time.deltaTime;
+
+        bool isSprinting = _playerState != null && _playerState.CurrentPlayerMovementState == PlayerMovementState.Sprinting;
+        bool bodyAimState = (_isAimingInput && !isSprinting && !_isReloading) || _combatReadyTimer > 0f;
+
+        if (_animator != null && _currentIndex > 0) 
+        {
+            if (_animator.GetBool("isAiming") != bodyAimState) _animator.SetBool("isAiming", bodyAimState);
+        }
+
+        if (_playerController != null) _playerController.IsAiming = _isAimingInput && !isSprinting && !_isReloading;
+        if (_playerController != null) _playerController.IsFiring = _combatReadyTimer > 0f;
+
         if (naZywoUstawianieBroni && _currentWeaponObject != null && _currentIndex >= 0 && _inventoryManager != null)
         {
             ItemData item = _inventoryManager.GetItem(_currentIndex);
@@ -52,93 +89,135 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _currentWeaponObject.transform.localScale = data.spawnScale;
             }
         }
+
+        if (_firstPersonAimCamera != null)
+        {
+            if (_isAimingInput && !isSprinting && !_isReloading && _inventoryManager != null && _currentIndex > 0)
+            {
+                ItemData item = _inventoryManager.GetItem(_currentIndex);
+                if (item is WeaponData data)
+                {
+                    _firstPersonAimCamera.localPosition = Vector3.Lerp(_firstPersonAimCamera.localPosition, data.cameraAimOffset, Time.deltaTime * cameraTransitionSpeed);
+                }
+            }
+            else
+            {
+                _firstPersonAimCamera.localPosition = Vector3.Lerp(_firstPersonAimCamera.localPosition, _defaultCameraLocalPos, Time.deltaTime * cameraTransitionSpeed);
+            }
+        }
+
+        HandleCombatLogic();
     }
+
+    private void HandleCombatLogic()
+    {
+        if (_currentIndex <= 0) return;
+        if (_isReloading)
+        {
+            _reloadTimer -= Time.deltaTime;
+            if (_reloadTimer <= 0) FinishReload();
+            return;
+        }
+        if (_isShooting) Shoot();
+    }
+
+    private void Shoot()
+    {
+        if (Time.time < _nextFireTime || _isReloading) return;
+        ItemData item = _inventoryManager.GetItem(_currentIndex);
+        if (!(item is WeaponData weaponData)) return;
+        if (!weaponData.isAutomatic && _hasFiredThisClick) return;
+        if (_ammoInSlots[_currentIndex] <= 0)
+        {
+            if (_reserveAmmo[_currentIndex] > 0) StartReload();
+            return;
+        }
+        _ammoInSlots[_currentIndex]--;
+        _hasFiredThisClick = true;
+        _combatReadyTimer = combatReadyDuration;
+        if (_animator != null) _animator.SetTrigger("Shoot");
+        _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate); 
+        UpdateUIAmmo();
+        Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+        Vector3 hitPoint = Physics.Raycast(ray, out RaycastHit hit, weaponData.range) ? hit.point : ray.GetPoint(weaponData.range);
+        Transform muzzle = GetMuzzle();
+        if (muzzle != null && bulletTrailPrefab != null)
+        {
+            LineRenderer trail = Instantiate(bulletTrailPrefab);
+            trail.SetPosition(0, muzzle.position);
+            trail.SetPosition(1, hitPoint);
+            Destroy(trail.gameObject, 0.05f);
+        }
+    }
+
+    private Transform GetMuzzle()
+    {
+        if (_currentWeaponObject == null) return null;
+        foreach (Transform child in _currentWeaponObject.GetComponentsInChildren<Transform>())
+            if (child.name.Equals("Muzzle")) return child;
+        return _currentWeaponObject.transform;
+    }
+
+    private void StartReload()
+    {
+        ItemData item = _inventoryManager.GetItem(_currentIndex);
+        if (!(item is WeaponData weaponData) || _ammoInSlots[_currentIndex] == weaponData.magazineSize || _reserveAmmo[_currentIndex] <= 0) return;
+        _isReloading = true;
+        _reloadTimer = weaponData.reloadTime;
+        if (_animator != null) _animator.SetTrigger("Reload");
+    }
+
+    private void FinishReload()
+    {
+        _isReloading = false;
+        ItemData item = _inventoryManager.GetItem(_currentIndex);
+        if (item is WeaponData weaponData)
+        {
+            int ammoToLoad = Mathf.Min(weaponData.magazineSize - _ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex]);
+            _ammoInSlots[_currentIndex] += ammoToLoad;
+            _reserveAmmo[_currentIndex] -= ammoToLoad;
+            UpdateUIAmmo();
+        }
+    }
+
+    private void UpdateUIAmmo() { if (_uiManager != null) _uiManager.UpdateAmmoDisplay(_ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex]); }
 
     private void HandleItemsSwapped(int indexA, int indexB)
     {
-        if (_currentIndex == indexA)
-        {
-            _currentIndex = indexB;
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex);
-        }
-        else if (_currentIndex == indexB)
-        {
-            _currentIndex = indexA;
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex);
-        }
+        if (_currentIndex == indexA) { _currentIndex = indexB; if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex); }
+        else if (_currentIndex == indexB) { _currentIndex = indexA; if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex); }
     }
 
-    public void OnWeapon1(InputAction.CallbackContext context)
-    {
-        if (context.performed) 
-        {
-            UnequipCurrent();
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(0);
-        }
-    }
-
-    public void OnWeapon2(InputAction.CallbackContext context)
-    {
-        if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(1) != null)
-        {
-            EquipWeapon(1);
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(1);
-        }
-    }
-
-    public void OnWeapon3(InputAction.CallbackContext context)
-    {
-        if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(2) != null)
-        {
-            EquipWeapon(2);
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(2);
-        }
-    }
-
-    public void OnWeapon4(InputAction.CallbackContext context)
-    {
-        if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(3) != null)
-        {
-            EquipWeapon(3);
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(3);
-        }
-    }
-
-    public void OnWeapon5(InputAction.CallbackContext context)
-    {
-        if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(4) != null)
-        {
-            EquipWeapon(4);
-            if (_uiManager != null) _uiManager.UpdateActiveSlot(4);
-        }
-    }
+    public void OnWeapon1(InputAction.CallbackContext context) { if (context.performed) { UnequipCurrent(); if (_uiManager != null) _uiManager.UpdateActiveSlot(0); } }
+    public void OnWeapon2(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(1) != null) { EquipWeapon(1); if (_uiManager != null) _uiManager.UpdateActiveSlot(1); } }
+    public void OnWeapon3(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(2) != null) { EquipWeapon(2); if (_uiManager != null) _uiManager.UpdateActiveSlot(2); } }
+    public void OnWeapon4(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(3) != null) { EquipWeapon(3); if (_uiManager != null) _uiManager.UpdateActiveSlot(3); } }
+    public void OnWeapon5(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(4) != null) { EquipWeapon(4); if (_uiManager != null) _uiManager.UpdateActiveSlot(4); } }
 
     public void OnAim(InputAction.CallbackContext context)
     {
-        if (_currentIndex == -1 || _currentWeaponObject == null) return;
-
-        if (context.started)
-        {
-            _isAiming = true;
-            if (_animator != null) _animator.SetBool("isAiming", true);
-        }
-        else if (context.canceled)
-        {
-            _isAiming = false;
-            if (_animator != null) _animator.SetBool("isAiming", false);
-        }
+        if (_currentIndex <= 0 || _currentWeaponObject == null) return;
+        if (context.started) _isAimingInput = true;
+        else if (context.canceled) _isAimingInput = false;
     }
+
+    public void OnShoot(InputAction.CallbackContext context)
+    {
+        if (_currentIndex <= 0 || _currentWeaponObject == null) return;
+        if (context.started) { _isShooting = true; _hasFiredThisClick = false; if (!_isReloading) Shoot(); }
+        else if (context.canceled) _isShooting = false;
+    }
+
+    public void OnReload(InputAction.CallbackContext context) { if (_currentIndex <= 0 || _currentWeaponObject == null) return; if (context.performed && !_isReloading) StartReload(); }
 
     private void EquipWeapon(int index)
     {
         if (index == _currentIndex || _inventoryManager == null) return;
-
         ItemData item = _inventoryManager.GetItem(index);
         if (item == null || !(item is WeaponData data)) return;
-
         UnequipCurrent();
         _currentIndex = index;
-
+        if (!_initializedAmmo[index]) { _ammoInSlots[index] = data.magazineSize; _reserveAmmo[index] = data.maxReserveAmmo; _initializedAmmo[index] = true; }
         if (data.weaponPrefab != null)
         {
             _currentWeaponObject = Instantiate(data.weaponPrefab, _weaponSocket);
@@ -146,21 +225,16 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
             _currentWeaponObject.transform.localScale = data.spawnScale;
         }
-
         if (_animator != null) _animator.SetBool("HasWeapon", true);
+        UpdateUIAmmo();
     }
 
     private void UnequipCurrent()
     {
         if (_currentWeaponObject != null) Destroy(_currentWeaponObject);
-        _currentIndex = 0;
-        _isAiming = false;
-
-        if (_animator != null)
-        {
-            _animator.SetBool("HasWeapon", false);
-            _animator.SetBool("isAiming", false);
-        }
-        if (_uiManager != null) _uiManager.UpdateActiveSlot(0);
+        _currentIndex = 0; _isAimingInput = false; _isShooting = false; _isReloading = false; _combatReadyTimer = 0f;
+        if (_playerController != null) _playerController.IsFiring = false;
+        if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); }
+        if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1); }
     }
 }

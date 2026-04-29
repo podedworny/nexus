@@ -6,13 +6,13 @@ namespace Nexus.FinalCharacterController
     [DefaultExecutionOrder(-1)]
     public class PlayerController : MonoBehaviour
     {
-        #region Class Variables
         [Header("Components")]
         [SerializeField] private CharacterController _characterController;
         [SerializeField] private Camera _playerCamera;
         public float RotationMismatch { get; private set; } = 0f;
         public bool IsRotatingToTarget { get; private set; } = false;
         public bool IsAiming { get; set; } = false;
+        public bool IsFiring { get; set; } = false;
 
         [Header("Base Movement")]
         public float runAcceleration = 35f;
@@ -53,9 +53,7 @@ namespace Nexus.FinalCharacterController
         private float _stepOffset;
 
         private PlayerMovementState _lastMovementState = PlayerMovementState.Falling;
-        #endregion
 
-        #region Startup
         private void Awake()
         {
             _playerLocomotionInput = GetComponent<PlayerLocomotionInput>();
@@ -64,9 +62,7 @@ namespace Nexus.FinalCharacterController
             _antiBump = sprintSpeed;
             _stepOffset = _characterController.stepOffset;
         }
-        #endregion
 
-        #region Update Logic
         private void Update()
         {
             UpdateMovementState();
@@ -173,9 +169,7 @@ namespace Nexus.FinalCharacterController
 
             return velocity;
         }
-        #endregion
 
-        #region Late Update Logic
         private void LateUpdate()
         {
             UpdateCameraRotation();
@@ -192,7 +186,7 @@ namespace Nexus.FinalCharacterController
             bool isIdling = _playerState.CurrentPlayerMovementState == PlayerMovementState.Idling;
             IsRotatingToTarget = _rotatingToTargetTimer > 0;
 
-            if (IsAiming)
+            if (IsAiming || IsFiring)
             {
                 transform.rotation = Quaternion.Euler(0f, _cameraRotation.x, 0f);
             }
@@ -234,29 +228,23 @@ namespace Nexus.FinalCharacterController
             Quaternion targetRotationX = Quaternion.Euler(0f, _playerTargetRotation.x, 0f);
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotationX, playerModelRotationSpeed * Time.deltaTime);
         }
-        #endregion
 
-        #region State Checks
         private bool IsMovingLaterally()
         {
             Vector3 lateralVelocity = new Vector3(_characterController.velocity.x, 0f, _characterController.velocity.y);
-
             return lateralVelocity.magnitude > movingThreshold;
         }
 
         private bool IsGrounded()
         {
             bool grounded = _playerState.InGroundedState() ? IsGroundedWhileGrounded() : IsGroundedWhileAirborne();
-
             return grounded;
         }
 
         private bool IsGroundedWhileGrounded()
         {
             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - _characterController.radius, transform.position.z);
-
             bool grounded = Physics.CheckSphere(spherePosition, _characterController.radius, _groundLayers, QueryTriggerInteraction.Ignore);
-
             return grounded;
         }
 
@@ -264,9 +252,7 @@ namespace Nexus.FinalCharacterController
         {
             Vector3 normal = CharacterControllerUtils.GetNormalWithSphereCast(_characterController, _groundLayers);
             float angle = Vector3.Angle(normal, Vector3.up);
-            print(angle);
             bool validAngle = angle <= _characterController.slopeLimit;
-
             return _characterController.isGrounded && validAngle;
         }
 
@@ -274,6 +260,5 @@ namespace Nexus.FinalCharacterController
         {
             return _playerLocomotionInput.MovementInput.y >= Mathf.Abs(_playerLocomotionInput.MovementInput.x);
         }
-        #endregion
     }
 }

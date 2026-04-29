@@ -375,6 +375,24 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Shoot"",
+                    ""type"": ""Button"",
+                    ""id"": ""af88e55e-1b20-4db8-bfef-8fa4a2306665"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Reload"",
+                    ""type"": ""Button"",
+                    ""id"": ""2647ac77-f072-4949-b62f-b4f0c8070a1a"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -443,6 +461,28 @@ namespace Nexus.FinalCharacterController
                     ""action"": ""Weapon5"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""542e5a24-2264-4ced-8f19-3f1c4e9cff76"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Shoot"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fa37d34e-9ff3-403f-9566-a79dd09b6e00"",
+                    ""path"": ""<Keyboard>/r"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Reload"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -499,6 +539,8 @@ namespace Nexus.FinalCharacterController
             m_CombatMap_Aim = m_CombatMap.FindAction("Aim", throwIfNotFound: true);
             m_CombatMap_Weapon4 = m_CombatMap.FindAction("Weapon4", throwIfNotFound: true);
             m_CombatMap_Weapon5 = m_CombatMap.FindAction("Weapon5", throwIfNotFound: true);
+            m_CombatMap_Shoot = m_CombatMap.FindAction("Shoot", throwIfNotFound: true);
+            m_CombatMap_Reload = m_CombatMap.FindAction("Reload", throwIfNotFound: true);
             // InventoryMap
             m_InventoryMap = asset.FindActionMap("InventoryMap", throwIfNotFound: true);
             m_InventoryMap_ToggleInventory = m_InventoryMap.FindAction("ToggleInventory", throwIfNotFound: true);
@@ -935,6 +977,8 @@ namespace Nexus.FinalCharacterController
         private readonly InputAction m_CombatMap_Aim;
         private readonly InputAction m_CombatMap_Weapon4;
         private readonly InputAction m_CombatMap_Weapon5;
+        private readonly InputAction m_CombatMap_Shoot;
+        private readonly InputAction m_CombatMap_Reload;
         /// <summary>
         /// Provides access to input actions defined in input action map "CombatMap".
         /// </summary>
@@ -970,6 +1014,14 @@ namespace Nexus.FinalCharacterController
             /// Provides access to the underlying input action "CombatMap/Weapon5".
             /// </summary>
             public InputAction @Weapon5 => m_Wrapper.m_CombatMap_Weapon5;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Shoot".
+            /// </summary>
+            public InputAction @Shoot => m_Wrapper.m_CombatMap_Shoot;
+            /// <summary>
+            /// Provides access to the underlying input action "CombatMap/Reload".
+            /// </summary>
+            public InputAction @Reload => m_Wrapper.m_CombatMap_Reload;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -1014,6 +1066,12 @@ namespace Nexus.FinalCharacterController
                 @Weapon5.started += instance.OnWeapon5;
                 @Weapon5.performed += instance.OnWeapon5;
                 @Weapon5.canceled += instance.OnWeapon5;
+                @Shoot.started += instance.OnShoot;
+                @Shoot.performed += instance.OnShoot;
+                @Shoot.canceled += instance.OnShoot;
+                @Reload.started += instance.OnReload;
+                @Reload.performed += instance.OnReload;
+                @Reload.canceled += instance.OnReload;
             }
 
             /// <summary>
@@ -1043,6 +1101,12 @@ namespace Nexus.FinalCharacterController
                 @Weapon5.started -= instance.OnWeapon5;
                 @Weapon5.performed -= instance.OnWeapon5;
                 @Weapon5.canceled -= instance.OnWeapon5;
+                @Shoot.started -= instance.OnShoot;
+                @Shoot.performed -= instance.OnShoot;
+                @Shoot.canceled -= instance.OnShoot;
+                @Reload.started -= instance.OnReload;
+                @Reload.performed -= instance.OnReload;
+                @Reload.canceled -= instance.OnReload;
             }
 
             /// <summary>
@@ -1301,6 +1365,20 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnWeapon5(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Shoot" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnShoot(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Reload" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnReload(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InventoryMap" which allows adding and removing callbacks.

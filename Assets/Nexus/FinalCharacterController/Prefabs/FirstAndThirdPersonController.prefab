@@ -2723,7 +2723,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3849397969110524841}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0.00000014901158, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -6395,7 +6395,10 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage: "\nBinding warning: Some generic clip(s) animate transforms that
+    are already bound by a Humanoid avatar. These transforms can only be changed
+    by Humanoid clips.\n\tTransform 'Scapula_R'\n\tTransform 'Scapula_R'\n\tFrom
+    animation clip 'abc'"
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -6547,6 +6550,9 @@ MonoBehaviour:
   _fppMask:
     serializedVersion: 2
     m_Bits: 1015
+  _playerController: {fileID: 0}
+  _playerState: {fileID: 0}
+  _weaponManager: {fileID: 0}
   _hideHeadDelay: 0.3
 --- !u!1 &9205230815037187086
 GameObject:

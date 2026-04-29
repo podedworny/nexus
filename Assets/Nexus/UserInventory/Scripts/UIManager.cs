@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class UIManager : MonoBehaviour
 {
@@ -12,6 +13,9 @@ public class UIManager : MonoBehaviour
     public GameObject[] hotbarSlots;
     public Color activeColor = Color.yellow;
     public Color inactiveColor = Color.gray;
+
+    [Header("Ammo UI")]
+    public TextMeshProUGUI ammoText;
 
     private void OnEnable()
     {
@@ -47,6 +51,7 @@ public class UIManager : MonoBehaviour
         }
 
         UpdateHotbarIcons();
+        UpdateAmmoDisplay(-1, -1);
     }
 
     public void UpdateActiveSlot(int slotIndex)
@@ -59,7 +64,7 @@ public class UIManager : MonoBehaviour
                 if (bg != null) 
                 {
                     Color targetColor = (i == slotIndex) ? activeColor : inactiveColor;
-                    targetColor.a = 1f; // Wymuszamy pełną widoczność tła
+                    targetColor.a = 1f; 
                     bg.color = targetColor;
                 }
             }
@@ -107,6 +112,20 @@ public class UIManager : MonoBehaviour
         {
             staminaSlider.maxValue = maxStamina;
             staminaSlider.value = currentStamina;
+        }
+    }
+
+    public void UpdateAmmoDisplay(int currentAmmo, int reserveAmmo)
+    {
+        if (ammoText == null) return;
+
+        if (currentAmmo < 0) 
+        {
+            ammoText.text = "";
+        }
+        else
+        {
+            ammoText.text = currentAmmo + " / " + reserveAmmo;
         }
     }
 }

@@ -18,6 +18,12 @@ MonoBehaviour:
   spawnPosition: {x: 0.0051, y: 0.0656, z: 0.1009}
   spawnRotation: {x: -34.208, y: -175.022, z: 6.634}
   spawnScale: {x: 1.1, y: 1.1, z: 1.1}
+  cameraAimOffset: {x: 0, y: 0, z: 0}
   damage: 67
-  fireRate: 67
+  fireRate: 0.1
+  range: 100
+  isAutomatic: 0
+  magazineSize: 15
+  maxReserveAmmo: 90
+  reloadTime: 1.7
   description: Pistol mock
