@@ -21,6 +21,7 @@ public class PlayerStats : MonoBehaviour
     private float _regenTimer;
     private PlayerState _playerState;
     private PlayerLocomotionInput _input;
+    private bool _isDead = false;
 
     private void Awake()
     {
@@ -39,6 +40,7 @@ public class PlayerStats : MonoBehaviour
 
     private void Update()
     {
+        if (_isDead) return;
         HandleStamina();
     }
 
@@ -88,6 +90,8 @@ public class PlayerStats : MonoBehaviour
 
     public void TakeDamage(float amount)
     {
+        if (_isDead) return;
+
         currentHealth -= amount;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
@@ -100,6 +104,8 @@ public class PlayerStats : MonoBehaviour
 
     public void ConsumeStamina(float amount)
     {
+        if (_isDead) return;
+
         currentStamina -= amount;
         currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
@@ -107,6 +113,8 @@ public class PlayerStats : MonoBehaviour
 
     public void RestoreStamina(float amount)
     {
+        if (_isDead) return;
+
         currentStamina += amount;
         currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
@@ -114,6 +122,18 @@ public class PlayerStats : MonoBehaviour
 
     private void Die()
     {
-        Debug.Log("Dead");
+        _isDead = true;
+    }
+
+    private void OnGUI()
+    {
+        if (_isDead)
+        {
+            GUIStyle style = new GUIStyle();
+            style.fontSize = 100;
+            style.normal.textColor = Color.red;
+            style.alignment = TextAnchor.MiddleCenter;
+            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), "YOU DIED", style);
+        }
     }
 }

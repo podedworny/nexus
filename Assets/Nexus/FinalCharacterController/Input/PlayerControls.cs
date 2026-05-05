@@ -291,6 +291,15 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Interact"",
+                    ""type"": ""Button"",
+                    ""id"": ""41474934-16fd-4b14-98b3-917431345942"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -313,6 +322,17 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Gather"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""cc64fcac-fd6f-4ae8-910a-280c7a927467"",
+                    ""path"": ""<Keyboard>/f"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Interact"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -531,6 +551,7 @@ namespace Nexus.FinalCharacterController
             m_PlayerActionMap = asset.FindActionMap("PlayerActionMap", throwIfNotFound: true);
             m_PlayerActionMap_Attack = m_PlayerActionMap.FindAction("Attack", throwIfNotFound: true);
             m_PlayerActionMap_Gather = m_PlayerActionMap.FindAction("Gather", throwIfNotFound: true);
+            m_PlayerActionMap_Interact = m_PlayerActionMap.FindAction("Interact", throwIfNotFound: true);
             // CombatMap
             m_CombatMap = asset.FindActionMap("CombatMap", throwIfNotFound: true);
             m_CombatMap_Weapon1 = m_CombatMap.FindAction("Weapon1", throwIfNotFound: true);
@@ -866,6 +887,7 @@ namespace Nexus.FinalCharacterController
         private List<IPlayerActionMapActions> m_PlayerActionMapActionsCallbackInterfaces = new List<IPlayerActionMapActions>();
         private readonly InputAction m_PlayerActionMap_Attack;
         private readonly InputAction m_PlayerActionMap_Gather;
+        private readonly InputAction m_PlayerActionMap_Interact;
         /// <summary>
         /// Provides access to input actions defined in input action map "PlayerActionMap".
         /// </summary>
@@ -885,6 +907,10 @@ namespace Nexus.FinalCharacterController
             /// Provides access to the underlying input action "PlayerActionMap/Gather".
             /// </summary>
             public InputAction @Gather => m_Wrapper.m_PlayerActionMap_Gather;
+            /// <summary>
+            /// Provides access to the underlying input action "PlayerActionMap/Interact".
+            /// </summary>
+            public InputAction @Interact => m_Wrapper.m_PlayerActionMap_Interact;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -917,6 +943,9 @@ namespace Nexus.FinalCharacterController
                 @Gather.started += instance.OnGather;
                 @Gather.performed += instance.OnGather;
                 @Gather.canceled += instance.OnGather;
+                @Interact.started += instance.OnInteract;
+                @Interact.performed += instance.OnInteract;
+                @Interact.canceled += instance.OnInteract;
             }
 
             /// <summary>
@@ -934,6 +963,9 @@ namespace Nexus.FinalCharacterController
                 @Gather.started -= instance.OnGather;
                 @Gather.performed -= instance.OnGather;
                 @Gather.canceled -= instance.OnGather;
+                @Interact.started -= instance.OnInteract;
+                @Interact.performed -= instance.OnInteract;
+                @Interact.canceled -= instance.OnInteract;
             }
 
             /// <summary>
@@ -1315,6 +1347,13 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnGather(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Interact" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnInteract(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "CombatMap" which allows adding and removing callbacks.

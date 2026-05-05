@@ -132,14 +132,32 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             if (_reserveAmmo[_currentIndex] > 0) StartReload();
             return;
         }
+        
         _ammoInSlots[_currentIndex]--;
         _hasFiredThisClick = true;
         _combatReadyTimer = combatReadyDuration;
         if (_animator != null) _animator.SetTrigger("Shoot");
         _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate); 
         UpdateUIAmmo();
+        
         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-        Vector3 hitPoint = Physics.Raycast(ray, out RaycastHit hit, weaponData.range) ? hit.point : ray.GetPoint(weaponData.range);
+        Vector3 hitPoint;
+
+        if (Physics.Raycast(ray, out RaycastHit hit, weaponData.range))
+        {
+            hitPoint = hit.point;
+            
+            ZombieHealth zombie = hit.collider.GetComponentInParent<ZombieHealth>();
+            if (zombie != null)
+            {
+                zombie.TakeDamage(weaponData.damage);
+            }
+        }
+        else
+        {
+            hitPoint = ray.GetPoint(weaponData.range);
+        }
+
         Transform muzzle = GetMuzzle();
         if (muzzle != null && bulletTrailPrefab != null)
         {

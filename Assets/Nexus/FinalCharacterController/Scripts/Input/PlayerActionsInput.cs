@@ -6,23 +6,22 @@ namespace Nexus.FinalCharacterController
     [DefaultExecutionOrder(-2)]
     public class PlayerActionsInput : MonoBehaviour, PlayerControls.IPlayerActionMapActions
     {
-        #region Class Variables
         public bool AttackPressed { get; private set; }
         public bool GatherPressed { get; private set; }
+        public bool InteractPressed { get; private set; }
 
         private PlayerLocomotionInput _playerLocomotionInput;
-        #endregion
+        private WaveButton _currentHoveredButton;
 
-        #region Startup
         private void Awake()
         {
             _playerLocomotionInput = GetComponent<PlayerLocomotionInput>();
         }
+        
         private void OnEnable()
         {
             if (PlayerInputManager.Instance?.PlayerControls == null)
             {
-                Debug.LogError("Player controls is not initialized - cannot enable");
                 return;
             }
 
@@ -34,20 +33,48 @@ namespace Nexus.FinalCharacterController
         {
             if (PlayerInputManager.Instance?.PlayerControls == null)
             {
-                Debug.LogError("Player controls is not initialized - cannot disable");
                 return;
             }
 
             PlayerInputManager.Instance.PlayerControls.PlayerActionMap.Disable();
             PlayerInputManager.Instance.PlayerControls.PlayerActionMap.RemoveCallbacks(this);
         }
-        #endregion
 
         private void Update()
         {
             if (_playerLocomotionInput.MovementInput != Vector2.zero)
             {
                 GatherPressed = false;
+                InteractPressed = false;
+            }
+
+            CheckForInteractables();
+        }
+
+        private void CheckForInteractables()
+        {
+            if (Camera.main == null) return;
+
+            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+            if (Physics.Raycast(ray, out RaycastHit hit, 5f))
+            {
+                WaveButton button = hit.collider.GetComponentInParent<WaveButton>();
+                if (button != null)
+                {
+                    if (_currentHoveredButton != button)
+                    {
+                        if (_currentHoveredButton != null) _currentHoveredButton.SetHoverState(false);
+                        _currentHoveredButton = button;
+                        _currentHoveredButton.SetHoverState(true);
+                    }
+                    return;
+                }
+            }
+
+            if (_currentHoveredButton != null)
+            {
+                _currentHoveredButton.SetHoverState(false);
+                _currentHoveredButton = null;
             }
         }
 
@@ -61,7 +88,11 @@ namespace Nexus.FinalCharacterController
             AttackPressed = false;
         }
 
-        #region Input Callbacks
+        public void SetInteractPressedFalse()
+        {
+            InteractPressed = false;
+        }
+
         public void OnAttack(InputAction.CallbackContext context)
         {
             if (!context.performed)
@@ -77,6 +108,18 @@ namespace Nexus.FinalCharacterController
 
             GatherPressed = true;
         }
-        #endregion
+
+        public void OnInteract(InputAction.CallbackContext context)
+        {
+            if (!context.performed)
+                return;
+
+            InteractPressed = true;
+            
+            if (_currentHoveredButton != null)
+            {
+                _currentHoveredButton.PressButton();
+            }
+        }
     }
 }
