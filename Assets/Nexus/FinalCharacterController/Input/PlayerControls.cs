@@ -300,6 +300,15 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""OpenShop"",
+                    ""type"": ""Button"",
+                    ""id"": ""340a5427-3f7f-424f-979e-cd985dc5b6fa"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -333,6 +342,17 @@ namespace Nexus.FinalCharacterController
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""a0ee7180-64fe-46b8-ac7b-99cb415e45fd"",
+                    ""path"": ""<Keyboard>/t"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""OpenShop"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -552,6 +572,7 @@ namespace Nexus.FinalCharacterController
             m_PlayerActionMap_Attack = m_PlayerActionMap.FindAction("Attack", throwIfNotFound: true);
             m_PlayerActionMap_Gather = m_PlayerActionMap.FindAction("Gather", throwIfNotFound: true);
             m_PlayerActionMap_Interact = m_PlayerActionMap.FindAction("Interact", throwIfNotFound: true);
+            m_PlayerActionMap_OpenShop = m_PlayerActionMap.FindAction("OpenShop", throwIfNotFound: true);
             // CombatMap
             m_CombatMap = asset.FindActionMap("CombatMap", throwIfNotFound: true);
             m_CombatMap_Weapon1 = m_CombatMap.FindAction("Weapon1", throwIfNotFound: true);
@@ -888,6 +909,7 @@ namespace Nexus.FinalCharacterController
         private readonly InputAction m_PlayerActionMap_Attack;
         private readonly InputAction m_PlayerActionMap_Gather;
         private readonly InputAction m_PlayerActionMap_Interact;
+        private readonly InputAction m_PlayerActionMap_OpenShop;
         /// <summary>
         /// Provides access to input actions defined in input action map "PlayerActionMap".
         /// </summary>
@@ -911,6 +933,10 @@ namespace Nexus.FinalCharacterController
             /// Provides access to the underlying input action "PlayerActionMap/Interact".
             /// </summary>
             public InputAction @Interact => m_Wrapper.m_PlayerActionMap_Interact;
+            /// <summary>
+            /// Provides access to the underlying input action "PlayerActionMap/OpenShop".
+            /// </summary>
+            public InputAction @OpenShop => m_Wrapper.m_PlayerActionMap_OpenShop;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -946,6 +972,9 @@ namespace Nexus.FinalCharacterController
                 @Interact.started += instance.OnInteract;
                 @Interact.performed += instance.OnInteract;
                 @Interact.canceled += instance.OnInteract;
+                @OpenShop.started += instance.OnOpenShop;
+                @OpenShop.performed += instance.OnOpenShop;
+                @OpenShop.canceled += instance.OnOpenShop;
             }
 
             /// <summary>
@@ -966,6 +995,9 @@ namespace Nexus.FinalCharacterController
                 @Interact.started -= instance.OnInteract;
                 @Interact.performed -= instance.OnInteract;
                 @Interact.canceled -= instance.OnInteract;
+                @OpenShop.started -= instance.OnOpenShop;
+                @OpenShop.performed -= instance.OnOpenShop;
+                @OpenShop.canceled -= instance.OnOpenShop;
             }
 
             /// <summary>
@@ -1354,6 +1386,13 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnInteract(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "OpenShop" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnOpenShop(InputAction.CallbackContext context);
         }
         /// <summary>
         /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "CombatMap" which allows adding and removing callbacks.

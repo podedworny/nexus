@@ -121,5 +121,9 @@ namespace Nexus.FinalCharacterController
                 _currentHoveredButton.PressButton();
             }
         }
+
+        public void OnOpenShop(InputAction.CallbackContext context)
+        {
+        }
     }
 }

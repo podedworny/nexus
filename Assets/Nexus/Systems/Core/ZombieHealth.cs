@@ -15,12 +15,17 @@ public class ZombieHealth : MonoBehaviour
     private NavMeshAgent _agent;
     private ZombieAI _zombieAI;
 
-    private void Start()
+    private void Awake()
     {
-        currentHealth = maxHealth;
         _animator = GetComponentInChildren<Animator>();
         _agent = GetComponent<NavMeshAgent>();
         _zombieAI = GetComponent<ZombieAI>();
+    }
+
+    public void Initialize(float healthAmount)
+    {
+        maxHealth = healthAmount;
+        currentHealth = maxHealth;
     }
 
     public void TakeDamage(float amount)

@@ -143,6 +143,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
         Vector3 hitPoint;
 
+        float actualDamage = weaponData.damage;
+        if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
+
         if (Physics.Raycast(ray, out RaycastHit hit, weaponData.range))
         {
             hitPoint = hit.point;
@@ -150,7 +153,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             ZombieHealth zombie = hit.collider.GetComponentInParent<ZombieHealth>();
             if (zombie != null)
             {
-                zombie.TakeDamage(weaponData.damage);
+                zombie.TakeDamage(actualDamage);
             }
         }
         else
@@ -195,6 +198,19 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             _ammoInSlots[_currentIndex] += ammoToLoad;
             _reserveAmmo[_currentIndex] -= ammoToLoad;
             UpdateUIAmmo();
+        }
+    }
+
+    public void BuyAmmo()
+    {
+        if (_currentIndex > 0 && _inventoryManager != null)
+        {
+            ItemData item = _inventoryManager.GetItem(_currentIndex);
+            if (item is WeaponData weaponData)
+            {
+                _reserveAmmo[_currentIndex] += weaponData.magazineSize * 3;
+                UpdateUIAmmo();
+            }
         }
     }
 

@@ -17,6 +17,11 @@ public class UIManager : MonoBehaviour
     [Header("Ammo UI")]
     public TextMeshProUGUI ammoText;
 
+    [Header("Game State UI")]
+    public TextMeshProUGUI currencyText;
+    public TextMeshProUGUI waveText;
+    public TextMeshProUGUI livesText;
+
     private void OnEnable()
     {
         if (playerStats != null)
@@ -52,6 +57,20 @@ public class UIManager : MonoBehaviour
 
         UpdateHotbarIcons();
         UpdateAmmoDisplay(-1, -1);
+    }
+
+    private void Update()
+    {
+        if (GameManager.Instance != null)
+        {
+            if (currencyText != null) currencyText.text = "Money: " + GameManager.Instance.currency;
+            if (livesText != null) livesText.text = "Lives: " + GameManager.Instance.currentLives;
+        }
+        
+        if (WaveManager.Instance != null && waveText != null)
+        {
+            waveText.text = "Wave: " + WaveManager.Instance.currentWave;
+        }
     }
 
     public void UpdateActiveSlot(int slotIndex)

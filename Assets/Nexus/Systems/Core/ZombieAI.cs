@@ -14,11 +14,14 @@ public class ZombieAI : MonoBehaviour
     private Animator _animator;
     private float _nextAttackTime = 0f;
 
-    private void Start()
+    private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
         _animator = GetComponentInChildren<Animator>();
-        
+    }
+
+    private void Start()
+    {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -27,6 +30,15 @@ public class ZombieAI : MonoBehaviour
         }
 
         _agent.stoppingDistance = attackRange;
+    }
+
+    public void Initialize(float dmgAmount, float spdAmount)
+    {
+        damage = dmgAmount;
+        if (_agent != null)
+        {
+            _agent.speed = spdAmount;
+        }
     }
 
     private void Update()
@@ -42,6 +54,7 @@ public class ZombieAI : MonoBehaviour
             if (_animator != null)
             {
                 _animator.SetBool("isWalking", false);
+                _animator.speed = 1f;
             }
 
             if (Time.time >= _nextAttackTime)
@@ -58,6 +71,15 @@ public class ZombieAI : MonoBehaviour
             {
                 bool isMoving = _agent.velocity.magnitude > 0.1f;
                 _animator.SetBool("isWalking", isMoving);
+                
+                if (isMoving)
+                {
+                    _animator.speed = _agent.velocity.magnitude;
+                }
+                else
+                {
+                    _animator.speed = 1f;
+                }
             }
         }
     }
