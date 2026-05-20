@@ -87,15 +87,14 @@ public class ZombieAI : MonoBehaviour
     private void AttackPlayer()
     {
         _nextAttackTime = Time.time + attackCooldown;
-        
-        if (_animator != null)
-        {
-            _animator.SetTrigger("Attack");
-        }
+        if (_animator != null) _animator.SetTrigger("Attack");
+    }
 
-        if (_playerStats != null)
-        {
+    public void DealDamageToPlayer()
+    {
+        if (_playerStats == null || _playerTransform == null) return;
+        float dist = Vector3.Distance(transform.position, _playerTransform.position);
+        if (dist <= attackRange * 1.2f)
             _playerStats.TakeDamage(damage);
-        }
     }
 }

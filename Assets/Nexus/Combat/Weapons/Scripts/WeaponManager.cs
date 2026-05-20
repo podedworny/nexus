@@ -82,11 +82,20 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         if (naZywoUstawianieBroni && _currentWeaponObject != null && _currentIndex >= 0 && _inventoryManager != null)
         {
             ItemData item = _inventoryManager.GetItem(_currentIndex);
-            if (item != null && item is WeaponData data)
+            if (item != null)
             {
-                _currentWeaponObject.transform.localPosition = data.spawnPosition;
-                _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
-                _currentWeaponObject.transform.localScale = data.spawnScale;
+                if (item is WeaponData data)
+                {
+                    _currentWeaponObject.transform.localPosition = data.spawnPosition;
+                    _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
+                    _currentWeaponObject.transform.localScale = data.spawnScale;
+                }
+                else if (item is MeleeWeaponData meleeData)
+                {
+                    _currentWeaponObject.transform.localPosition = meleeData.spawnPosition;
+                    _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeData.spawnRotation);
+                    _currentWeaponObject.transform.localScale = meleeData.spawnScale;
+                }
             }
         }
 
@@ -125,49 +134,79 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         if (Time.time < _nextFireTime || _isReloading) return;
         ItemData item = _inventoryManager.GetItem(_currentIndex);
-        if (!(item is WeaponData weaponData)) return;
-        if (!weaponData.isAutomatic && _hasFiredThisClick) return;
-        if (_ammoInSlots[_currentIndex] <= 0)
-        {
-            if (_reserveAmmo[_currentIndex] > 0) StartReload();
-            return;
-        }
-        
-        _ammoInSlots[_currentIndex]--;
-        _hasFiredThisClick = true;
-        _combatReadyTimer = combatReadyDuration;
-        if (_animator != null) _animator.SetTrigger("Shoot");
-        _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate); 
-        UpdateUIAmmo();
-        
-        Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
-        Vector3 hitPoint;
 
-        float actualDamage = weaponData.damage;
-        if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
-
-        if (Physics.Raycast(ray, out RaycastHit hit, weaponData.range))
+        if (item is WeaponData weaponData)
         {
-            hitPoint = hit.point;
-            
-            ZombieHealth zombie = hit.collider.GetComponentInParent<ZombieHealth>();
-            if (zombie != null)
+            if (!weaponData.isAutomatic && _hasFiredThisClick) return;
+            if (_ammoInSlots[_currentIndex] <= 0)
             {
-                zombie.TakeDamage(actualDamage);
+                if (_reserveAmmo[_currentIndex] > 0) StartReload();
+                return;
+            }
+            
+            _ammoInSlots[_currentIndex]--;
+            _hasFiredThisClick = true;
+            _combatReadyTimer = combatReadyDuration;
+            if (_animator != null) _animator.SetTrigger("Shoot");
+            _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate); 
+            UpdateUIAmmo();
+            
+            Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
+            Vector3 hitPoint;
+
+            float actualDamage = weaponData.damage;
+            if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
+
+            if (Physics.Raycast(ray, out RaycastHit hit, weaponData.range))
+            {
+                hitPoint = hit.point;
+                
+                ZombieHealth zombie = hit.collider.GetComponentInParent<ZombieHealth>();
+                if (zombie != null)
+                {
+                    zombie.TakeDamage(actualDamage);
+                }
+            }
+            else
+            {
+                hitPoint = ray.GetPoint(weaponData.range);
+            }
+
+            Transform muzzle = GetMuzzle();
+            if (muzzle != null && bulletTrailPrefab != null)
+            {
+                LineRenderer trail = Instantiate(bulletTrailPrefab);
+                trail.SetPosition(0, muzzle.position);
+                trail.SetPosition(1, hitPoint);
+                Destroy(trail.gameObject, 0.05f);
             }
         }
-        else
+        else if (item is MeleeWeaponData meleeData)
         {
-            hitPoint = ray.GetPoint(weaponData.range);
+            if (_hasFiredThisClick) return;
+            
+            _hasFiredThisClick = true;
+            _combatReadyTimer = combatReadyDuration;
+            if (_animator != null) _animator.SetTrigger("MeleeAttack");
+            _nextFireTime = Time.time + Mathf.Max(0.01f, meleeData.attackRate);
         }
+    }
 
-        Transform muzzle = GetMuzzle();
-        if (muzzle != null && bulletTrailPrefab != null)
+    public void PerformMeleeStrike()
+    {
+        if (_currentIndex <= 0) { Debug.Log("currentIndex <= 0, return"); return; }
+        ItemData item = _inventoryManager.GetItem(_currentIndex);
+        if (!(item is MeleeWeaponData meleeWeapon)) { Debug.Log("Brak MeleeWeaponData, return"); return; }
+
+        float actualDamage = meleeWeapon.damage;
+        if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
+
+        Vector3 strikeOrigin = transform.position + Vector3.up * 1f + transform.forward * (meleeWeapon.attackRange * 0.5f);
+        Collider[] hits = Physics.OverlapSphere(strikeOrigin, meleeWeapon.hitRadius);
+        foreach (Collider col in hits)
         {
-            LineRenderer trail = Instantiate(bulletTrailPrefab);
-            trail.SetPosition(0, muzzle.position);
-            trail.SetPosition(1, hitPoint);
-            Destroy(trail.gameObject, 0.05f);
+            ZombieHealth zombie = col.GetComponentInParent<ZombieHealth>();
+            if (zombie != null) zombie.TakeDamage(actualDamage);
         }
     }
 
@@ -214,7 +253,20 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         }
     }
 
-    private void UpdateUIAmmo() { if (_uiManager != null) _uiManager.UpdateAmmoDisplay(_ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex]); }
+    private void UpdateUIAmmo() 
+    { 
+        if (_uiManager != null) 
+        {
+            if (_inventoryManager.GetItem(_currentIndex) is MeleeWeaponData)
+            {
+                _uiManager.UpdateAmmoDisplay(-1, -1);
+            }
+            else
+            {
+                _uiManager.UpdateAmmoDisplay(_ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex]); 
+            }
+        }
+    }
 
     private void HandleItemsSwapped(int indexA, int indexB)
     {
@@ -231,6 +283,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     public void OnAim(InputAction.CallbackContext context)
     {
         if (_currentIndex <= 0 || _currentWeaponObject == null) return;
+        ItemData item = _inventoryManager.GetItem(_currentIndex);
+        if (item is MeleeWeaponData) return;
+
         if (context.started) _isAimingInput = true;
         else if (context.canceled) _isAimingInput = false;
     }
@@ -248,18 +303,33 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         if (index == _currentIndex || _inventoryManager == null) return;
         ItemData item = _inventoryManager.GetItem(index);
-        if (item == null || !(item is WeaponData data)) return;
+        if (item == null) return;
         UnequipCurrent();
         _currentIndex = index;
-        if (!_initializedAmmo[index]) { _ammoInSlots[index] = data.magazineSize; _reserveAmmo[index] = data.maxReserveAmmo; _initializedAmmo[index] = true; }
-        if (data.weaponPrefab != null)
+        
+        if (item is WeaponData data)
         {
-            _currentWeaponObject = Instantiate(data.weaponPrefab, _weaponSocket);
-            _currentWeaponObject.transform.localPosition = data.spawnPosition;
-            _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
-            _currentWeaponObject.transform.localScale = data.spawnScale;
+            if (!_initializedAmmo[index]) { _ammoInSlots[index] = data.magazineSize; _reserveAmmo[index] = data.maxReserveAmmo; _initializedAmmo[index] = true; }
+            if (data.weaponPrefab != null)
+            {
+                _currentWeaponObject = Instantiate(data.weaponPrefab, _weaponSocket);
+                _currentWeaponObject.transform.localPosition = data.spawnPosition;
+                _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
+                _currentWeaponObject.transform.localScale = data.spawnScale;
+            }
+            if (_animator != null) { _animator.SetBool("HasWeapon", true); _animator.SetInteger("WeaponType", 1); }
         }
-        if (_animator != null) _animator.SetBool("HasWeapon", true);
+        else if (item is MeleeWeaponData meleeData)
+        {
+            if (meleeData.weaponPrefab != null)
+            {
+                _currentWeaponObject = Instantiate(meleeData.weaponPrefab, _weaponSocket);
+                _currentWeaponObject.transform.localPosition = meleeData.spawnPosition;
+                _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeData.spawnRotation);
+                _currentWeaponObject.transform.localScale = meleeData.spawnScale;
+            }
+            if (_animator != null) { _animator.SetBool("HasWeapon", true); _animator.SetInteger("WeaponType", 2); }
+        }
         UpdateUIAmmo();
     }
 
@@ -268,7 +338,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         if (_currentWeaponObject != null) Destroy(_currentWeaponObject);
         _currentIndex = 0; _isAimingInput = false; _isShooting = false; _isReloading = false; _combatReadyTimer = 0f;
         if (_playerController != null) _playerController.IsFiring = false;
-        if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); }
+        if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); }
         if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1); }
     }
 }

@@ -6,10 +6,11 @@ public class InventoryManager : MonoBehaviour
     [Header("Starting Items")]
     public ItemData handsItem;
     public ItemData startingWeapon;
+    public ItemData startingMeleeWeapon;
 
     public ItemData[] hotbarSlots = new ItemData[5];
     public Action OnInventoryChanged;
-    public Action<int, int> OnItemsSwapped; // Informuje co z czym zamieniono
+    public Action<int, int> OnItemsSwapped;
 
     private void Awake()
     {
@@ -18,6 +19,11 @@ public class InventoryManager : MonoBehaviour
         if (startingWeapon != null)
         {
             hotbarSlots[1] = startingWeapon;
+        }
+
+        if (startingMeleeWeapon != null)
+        {
+            hotbarSlots[2] = startingMeleeWeapon;
         }
     }
 
@@ -52,11 +58,9 @@ public class InventoryManager : MonoBehaviour
     {
         if (indexA == 0 || indexB == 0 || indexA == indexB) return;
 
-        ItemData temp = hotbarSlots[indexA];
-        hotbarSlots[indexA] = hotbarSlots[indexB];
-        hotbarSlots[indexB] = temp;
+        (hotbarSlots[indexA], hotbarSlots[indexB]) = (hotbarSlots[indexB], hotbarSlots[indexA]);
 
-        OnItemsSwapped?.Invoke(indexA, indexB); // Wysyłamy sygnał
+        OnItemsSwapped?.Invoke(indexA, indexB);
         OnInventoryChanged?.Invoke();
     }
 }
