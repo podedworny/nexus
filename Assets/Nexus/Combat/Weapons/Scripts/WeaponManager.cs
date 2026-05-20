@@ -257,13 +257,14 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     { 
         if (_uiManager != null) 
         {
-            if (_inventoryManager.GetItem(_currentIndex) is MeleeWeaponData)
+            ItemData item = _inventoryManager.GetItem(_currentIndex);
+            if (item is WeaponData weaponData)
             {
-                _uiManager.UpdateAmmoDisplay(-1, -1);
+                _uiManager.UpdateAmmoDisplay(_ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex], weaponData.magazineSize);
             }
             else
             {
-                _uiManager.UpdateAmmoDisplay(_ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex]); 
+                _uiManager.UpdateAmmoDisplay(-1, -1, 0);
             }
         }
     }
@@ -339,6 +340,6 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         _currentIndex = 0; _isAimingInput = false; _isShooting = false; _isReloading = false; _combatReadyTimer = 0f;
         if (_playerController != null) _playerController.IsFiring = false;
         if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); }
-        if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1); }
+        if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1, 0); }
     }
 }

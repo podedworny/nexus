@@ -16,9 +16,10 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler, IBeginDragHa
     {
         canvas = GetComponentInParent<Canvas>();
 
-        if (transform.childCount > 0)
+        Transform iconTransform = transform.Find("Icon");
+        if (iconTransform != null)
         {
-            iconImage = transform.GetChild(0).GetComponent<Image>();
+            iconImage = iconTransform.GetComponent<Image>();
         }
     }
 
@@ -31,9 +32,10 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler, IBeginDragHa
     {
         if (slotIndex == 0) return; 
         
-        if (iconImage == null && transform.childCount > 0)
+        if (iconImage == null)
         {
-            iconImage = transform.GetChild(0).GetComponent<Image>();
+            Transform iconTransform = transform.Find("Icon");
+            if (iconTransform != null) iconImage = iconTransform.GetComponent<Image>();
         }
 
         if (iconImage == null || iconImage.sprite == null) return; 
@@ -69,9 +71,10 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler, IBeginDragHa
     {
         if (draggedIcon != null) Destroy(draggedIcon);
         
-        if (iconImage == null && transform.childCount > 0)
+        if (iconImage == null)
         {
-            iconImage = transform.GetChild(0).GetComponent<Image>();
+            Transform iconTransform = transform.Find("Icon");
+            if (iconTransform != null) iconImage = iconTransform.GetComponent<Image>();
         }
 
         if (iconImage != null && iconImage.sprite != null)

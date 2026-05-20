@@ -1,26 +1,39 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
-    public Slider healthSlider;
-    public Slider staminaSlider;
+    [Header("Health & Stamina Bars")]
+    public Image healthBarFill;
+    public Image staminaBarFill;
+    public TextMeshProUGUI healthText;
+    public TextMeshProUGUI staminaText;
     public PlayerStats playerStats;
     public InventoryManager inventoryManager;
 
+    [Header("Lives")]
+    public Image[] lifeIcons;
+    public Color lifeActiveColor = new Color(0.88f, 0.34f, 0.34f, 1f);
+    public Color lifeEmptyColor = new Color(0.88f, 0.34f, 0.34f, 0.2f);
+
     [Header("Bottom Hotbar Settings")]
     public GameObject[] hotbarSlots;
-    public Color activeColor = Color.yellow;
-    public Color inactiveColor = Color.gray;
 
     [Header("Ammo UI")]
     public TextMeshProUGUI ammoText;
+    public Transform ammoPipsContainer;
+    public GameObject ammoPipPrefab;
+    public Color pipActiveColor = new Color(0.85f, 0.9f, 0.95f, 0.7f);
+    public Color pipUsedColor = new Color(0.85f, 0.9f, 0.95f, 0.15f);
+    
+    private List<Image> instantiatedPips = new List<Image>();
+    private int currentMagCapacity = -1;
 
     [Header("Game State UI")]
     public TextMeshProUGUI currencyText;
     public TextMeshProUGUI waveText;
-    public TextMeshProUGUI livesText;
 
     private void OnEnable()
     {
@@ -46,7 +59,7 @@ public class UIManager : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        
+
         UpdateActiveSlot(0);
 
         if (playerStats != null)
@@ -56,20 +69,20 @@ public class UIManager : MonoBehaviour
         }
 
         UpdateHotbarIcons();
-        UpdateAmmoDisplay(-1, -1);
+        UpdateAmmoDisplay(-1, -1, 0);
     }
 
     private void Update()
     {
         if (GameManager.Instance != null)
         {
-            if (currencyText != null) currencyText.text = "Money: " + GameManager.Instance.currency;
-            if (livesText != null) livesText.text = "Lives: " + GameManager.Instance.currentLives;
+            if (currencyText != null) currencyText.text = "<color=#FACC15>$</color> " + GameManager.Instance.currency;
+            UpdateLivesIcons(GameManager.Instance.currentLives);
         }
-        
+
         if (WaveManager.Instance != null && waveText != null)
         {
-            waveText.text = "Wave: " + WaveManager.Instance.currentWave;
+            waveText.text = WaveManager.Instance.currentWave.ToString("D2");
         }
     }
 
@@ -77,15 +90,12 @@ public class UIManager : MonoBehaviour
     {
         for (int i = 0; i < hotbarSlots.Length; i++)
         {
-            if (hotbarSlots[i] != null)
+            if (hotbarSlots[i] == null) continue;
+
+            Transform borderObj = hotbarSlots[i].transform.Find("Border");
+            if (borderObj != null)
             {
-                Image bg = hotbarSlots[i].GetComponent<Image>();
-                if (bg != null) 
-                {
-                    Color targetColor = (i == slotIndex) ? activeColor : inactiveColor;
-                    targetColor.a = 1f; 
-                    bg.color = targetColor;
-                }
+                borderObj.gameObject.SetActive(i == slotIndex);
             }
         }
     }
@@ -97,12 +107,15 @@ public class UIManager : MonoBehaviour
         for (int i = 0; i < hotbarSlots.Length; i++)
         {
             if (hotbarSlots[i] == null || hotbarSlots[i].transform.childCount == 0) continue;
+
+            Transform iconTransform = hotbarSlots[i].transform.Find("Icon");
+            if (iconTransform == null) continue;
             
-            Image iconImage = hotbarSlots[i].transform.GetChild(0).GetComponent<Image>();
+            Image iconImage = iconTransform.GetComponent<Image>();
             if (iconImage == null) continue;
 
             ItemData item = inventoryManager.GetItem(i);
-            
+
             if (item != null && item.icon != null)
             {
                 iconImage.sprite = item.icon;
@@ -118,33 +131,88 @@ public class UIManager : MonoBehaviour
 
     private void UpdateHealthBar(float currentHealth, float maxHealth)
     {
-        if (healthSlider != null)
-        {
-            healthSlider.maxValue = maxHealth;
-            healthSlider.value = currentHealth;
-        }
+        if (healthBarFill != null && maxHealth > 0)
+            healthBarFill.fillAmount = currentHealth / maxHealth;
+
+        if (healthText != null)
+            healthText.text = Mathf.CeilToInt(currentHealth).ToString();
     }
 
     private void UpdateStaminaBar(float currentStamina, float maxStamina)
     {
-        if (staminaSlider != null)
+        if (staminaBarFill != null && maxStamina > 0)
+            staminaBarFill.fillAmount = currentStamina / maxStamina;
+
+        if (staminaText != null)
+            staminaText.text = Mathf.CeilToInt(currentStamina).ToString();
+    }
+
+    private void UpdateLivesIcons(int currentLives)
+    {
+        if (lifeIcons == null) return;
+        for (int i = 0; i < lifeIcons.Length; i++)
         {
-            staminaSlider.maxValue = maxStamina;
-            staminaSlider.value = currentStamina;
+            if (lifeIcons[i] != null)
+                lifeIcons[i].color = (i < currentLives) ? lifeActiveColor : lifeEmptyColor;
         }
     }
 
-    public void UpdateAmmoDisplay(int currentAmmo, int reserveAmmo)
+    public void UpdateAmmoDisplay(int currentAmmo, int reserveAmmo, int magCapacity)
     {
         if (ammoText == null) return;
 
-        if (currentAmmo < 0) 
+        if (currentAmmo < 0)
         {
             ammoText.text = "";
+            UpdateAmmoPips(0, 0);
+            return;
         }
-        else
+
+        ammoText.text = currentAmmo + " <color=#6B8EAD><size=60%>/ " + reserveAmmo + "</size></color>";
+        UpdateAmmoPips(currentAmmo, magCapacity);
+    }
+
+    private void UpdateAmmoPips(int current, int capacity)
+    {
+        if (ammoPipsContainer == null || ammoPipPrefab == null) return;
+
+        if (capacity != currentMagCapacity)
         {
-            ammoText.text = currentAmmo + " / " + reserveAmmo;
+            foreach (Transform child in ammoPipsContainer)
+            {
+                Destroy(child.gameObject);
+            }
+            instantiatedPips.Clear();
+
+            for (int i = 0; i < capacity; i++)
+            {
+                GameObject newPip = Instantiate(ammoPipPrefab, ammoPipsContainer, false);
+                newPip.SetActive(true);
+
+                RectTransform rt = newPip.GetComponent<RectTransform>();
+                if (rt != null)
+                {
+                    rt.localScale = Vector3.one;
+                    rt.localPosition = new Vector3(rt.localPosition.x, rt.localPosition.y, 0f);
+                    rt.localRotation = Quaternion.identity;
+                }
+
+                LayoutElement le = newPip.GetComponent<LayoutElement>();
+                if (le == null) le = newPip.AddComponent<LayoutElement>();
+                if (le.preferredWidth <= 0) le.preferredWidth = 15f;
+                if (le.preferredHeight <= 0) le.preferredHeight = 5f;
+
+                Image pipImage = newPip.GetComponent<Image>();
+                if (pipImage == null) pipImage = newPip.AddComponent<Image>();
+
+                instantiatedPips.Add(pipImage);
+            }
+            currentMagCapacity = capacity;
+        }
+
+        for (int i = 0; i < instantiatedPips.Count; i++)
+        {
+            instantiatedPips[i].color = (i < current) ? pipActiveColor : pipUsedColor;
         }
     }
 }
