@@ -6,6 +6,7 @@ public class InventoryManager : MonoBehaviour
     [Header("Starting Items")]
     public ItemData handsItem;
     public ItemData startingWeapon;
+    public ItemData startingWeapon2;
     public ItemData startingMeleeWeapon;
 
     public ItemData[] hotbarSlots = new ItemData[5];
@@ -24,6 +25,11 @@ public class InventoryManager : MonoBehaviour
         if (startingMeleeWeapon != null)
         {
             hotbarSlots[2] = startingMeleeWeapon;
+        }
+        
+        if (startingWeapon2 != null)
+        {
+            hotbarSlots[3] = startingWeapon2;
         }
     }
 

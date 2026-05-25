@@ -14,8 +14,6 @@ public class AutoLeftHandIK : MonoBehaviour
 
     void Update()
     {
-        // Szukamy LeftGrip TYLKO wewnątrz obiektu gracza (w jego hierarchii).
-        // Ignorujemy resztę świata. Jak WeaponManager zespawnuje broń w ręce, to ją znajdzie.
         Transform[] allChildren = GetComponentsInChildren<Transform>();
         foreach (Transform child in allChildren)
         {
@@ -29,17 +27,23 @@ public class AutoLeftHandIK : MonoBehaviour
 
     private void OnAnimatorIK(int layerIndex)
     {
-        if (_animator != null && _leftHandGrip != null)
-        {
-            bool celuje = _animator.GetBool("isAiming");
-            float targetWeight = celuje ? 1f : 0f;
+        if (_animator == null || _leftHandGrip == null) return;
 
-            _currentWeight = Mathf.Lerp(_currentWeight, targetWeight, Time.deltaTime * ikSmoothness);
+        int weaponType = _animator.GetInteger("WeaponType");
+        bool isAiming = _animator.GetBool("isAiming");
+        bool isReloading = _animator.GetBool("isReloading");
 
-            _animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, _currentWeight);
-            _animator.SetIKPosition(AvatarIKGoal.LeftHand, _leftHandGrip.position);
-            
-            _animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0f);
-        }
+        float targetWeight = 0f;
+
+        if (weaponType == 1)
+            targetWeight = isAiming ? 1f : 0f;
+        else if (weaponType == 3)
+            targetWeight = isReloading ? 0f : 1f;
+
+        _currentWeight = Mathf.Lerp(_currentWeight, targetWeight, Time.deltaTime * ikSmoothness);
+
+        _animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, _currentWeight);
+        _animator.SetIKPosition(AvatarIKGoal.LeftHand, _leftHandGrip.position);
+        _animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, 0f);
     }
 }

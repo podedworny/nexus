@@ -30,6 +30,13 @@ namespace Nexus.FinalCharacterController
         [Header("Animation")]
         public float playerModelRotationSpeed = 10f;
         public float rotateToTargetTime = 0.67f;
+        
+        [Header("Aim Rotation Correction")]
+        [SerializeField] private WeaponManager _weaponManager;
+        public float akAimRotationOffset = 15f;
+        public float aimOffsetSpeed = 6f;
+
+        private float _currentAimOffset = 0f;
 
         [Header("Camera Settings")]
         public float lookSenseH = 0.1f;
@@ -186,9 +193,13 @@ namespace Nexus.FinalCharacterController
             bool isIdling = _playerState.CurrentPlayerMovementState == PlayerMovementState.Idling;
             IsRotatingToTarget = _rotatingToTargetTimer > 0;
 
+            bool isAkAiming = _weaponManager != null && _weaponManager.CurrentAnimWeaponType == 3;
+            float targetOffset = isAkAiming ? akAimRotationOffset : 0f;
+            _currentAimOffset = Mathf.LerpAngle(_currentAimOffset, targetOffset, aimOffsetSpeed * Time.deltaTime);
+
             if (IsAiming || IsFiring)
             {
-                transform.rotation = Quaternion.Euler(0f, _cameraRotation.x, 0f);
+                transform.rotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
             }
             else if (!isIdling)
             {
@@ -206,7 +217,7 @@ namespace Nexus.FinalCharacterController
             float sign = Mathf.Sign(Vector3.Dot(crossProduct, transform.up));
             RotationMismatch = sign * Vector3.Angle(transform.forward, camForwardProjectedXZ);
         }
-
+        
         private void UpdateIdleRotation(float rotationTolerance)
         {
             if (Mathf.Abs(RotationMismatch) > rotationTolerance)

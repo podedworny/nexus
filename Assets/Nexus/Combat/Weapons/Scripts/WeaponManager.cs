@@ -22,7 +22,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private bool _isShooting = false;
     private bool _hasFiredThisClick = false;
     private Vector3 _defaultCameraLocalPos;
+    private Quaternion _defaultCameraLocalRot;
 
+    public int CurrentAnimWeaponType { get; private set; } = 0;
     private float _nextFireTime = 0f;
     private bool _isReloading = false;
     private float _reloadTimer = 0f;
@@ -61,6 +63,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private void Start()
     {
         if (_firstPersonAimCamera != null) _defaultCameraLocalPos = _firstPersonAimCamera.localPosition;
+        if (_firstPersonAimCamera != null) _defaultCameraLocalRot = _firstPersonAimCamera.localRotation;
         UnequipCurrent();
     }
 
@@ -107,11 +110,13 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 if (item is WeaponData data)
                 {
                     _firstPersonAimCamera.localPosition = Vector3.Lerp(_firstPersonAimCamera.localPosition, data.cameraAimOffset, Time.deltaTime * cameraTransitionSpeed);
+                    _firstPersonAimCamera.localRotation = Quaternion.Lerp(_firstPersonAimCamera.localRotation, Quaternion.Euler(data.cameraAimRotation), Time.deltaTime * cameraTransitionSpeed);
                 }
             }
             else
             {
                 _firstPersonAimCamera.localPosition = Vector3.Lerp(_firstPersonAimCamera.localPosition, _defaultCameraLocalPos, Time.deltaTime * cameraTransitionSpeed);
+                _firstPersonAimCamera.localRotation = Quaternion.Lerp(_firstPersonAimCamera.localRotation, _defaultCameraLocalRot, Time.deltaTime * cameraTransitionSpeed);
             }
         }
 
@@ -120,6 +125,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     private void HandleCombatLogic()
     {
+        if (_animator != null && _animator.GetBool("isAttacking") && Time.time >= _nextFireTime)
+            _animator.SetBool("isAttacking", false);
         if (_currentIndex <= 0) return;
         if (_isReloading)
         {
@@ -180,6 +187,15 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 trail.SetPosition(1, hitPoint);
                 Destroy(trail.gameObject, 0.05f);
             }
+            
+            if (_animator != null)
+            {
+                AnimationClip recoilClip = GetAnimClipByName("AK47_Fire");
+                if (recoilClip != null)
+                    _animator.SetFloat("RecoilSpeed", recoilClip.length / Mathf.Max(0.01f, weaponData.fireRate));
+            
+                _animator.SetTrigger("Shoot");
+            }
         }
         else if (item is MeleeWeaponData meleeData)
         {
@@ -188,15 +204,23 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             _hasFiredThisClick = true;
             _combatReadyTimer = combatReadyDuration;
             if (_animator != null) _animator.SetTrigger("MeleeAttack");
+            _animator.SetBool("isAttacking", true);
             _nextFireTime = Time.time + Mathf.Max(0.01f, meleeData.attackRate);
         }
+    }
+    
+    private AnimationClip GetAnimClipByName(string clipName)
+    {
+        foreach (AnimationClip clip in _animator.runtimeAnimatorController.animationClips)
+            if (clip.name == clipName) return clip;
+        return null;
     }
 
     public void PerformMeleeStrike()
     {
-        if (_currentIndex <= 0) { Debug.Log("currentIndex <= 0, return"); return; }
+        if (_currentIndex <= 0) { return; }
         ItemData item = _inventoryManager.GetItem(_currentIndex);
-        if (!(item is MeleeWeaponData meleeWeapon)) { Debug.Log("Brak MeleeWeaponData, return"); return; }
+        if (!(item is MeleeWeaponData meleeWeapon)) { return; }
 
         float actualDamage = meleeWeapon.damage;
         if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
@@ -225,11 +249,13 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         _isReloading = true;
         _reloadTimer = weaponData.reloadTime;
         if (_animator != null) _animator.SetTrigger("Reload");
+        _animator.SetBool("isReloading", true);
     }
 
     private void FinishReload()
     {
         _isReloading = false;
+        _animator.SetBool("isReloading", false);
         ItemData item = _inventoryManager.GetItem(_currentIndex);
         if (item is WeaponData weaponData)
         {
@@ -318,7 +344,11 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
                 _currentWeaponObject.transform.localScale = data.spawnScale;
             }
-            if (_animator != null) { _animator.SetBool("HasWeapon", true); _animator.SetInteger("WeaponType", 1); }
+            if (_animator != null) { 
+                _animator.SetBool("HasWeapon", true); 
+                _animator.SetInteger("WeaponType", data.animationWeaponType);
+                CurrentAnimWeaponType = data.animationWeaponType;
+            }
         }
         else if (item is MeleeWeaponData meleeData)
         {
@@ -329,17 +359,22 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeData.spawnRotation);
                 _currentWeaponObject.transform.localScale = meleeData.spawnScale;
             }
-            if (_animator != null) { _animator.SetBool("HasWeapon", true); _animator.SetInteger("WeaponType", 2); }
+            if (_animator != null) { 
+                _animator.SetBool("HasWeapon", true); 
+                _animator.SetInteger("WeaponType", 2);
+                CurrentAnimWeaponType = 2;
+            }
         }
         UpdateUIAmmo();
     }
 
     private void UnequipCurrent()
     {
+        CurrentAnimWeaponType = 0;
         if (_currentWeaponObject != null) Destroy(_currentWeaponObject);
         _currentIndex = 0; _isAimingInput = false; _isShooting = false; _isReloading = false; _combatReadyTimer = 0f;
         if (_playerController != null) _playerController.IsFiring = false;
-        if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); }
+        if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); _animator.SetBool("isReloading", false);}
         if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1, 0); }
     }
 }

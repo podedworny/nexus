@@ -19,8 +19,8 @@ MonoBehaviour:
   spawnRotation: {x: -34.208, y: -175.022, z: 6.634}
   spawnScale: {x: 1.1, y: 1.1, z: 1.1}
   cameraAimOffset: {x: 0, y: 0, z: 0}
-  damage: 67
-  fireRate: 0.1
+  damage: 15
+  fireRate: 0.5
   range: 100
   isAutomatic: 0
   magazineSize: 15
