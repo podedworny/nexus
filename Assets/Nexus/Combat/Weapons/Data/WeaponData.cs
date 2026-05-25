@@ -19,6 +19,8 @@ public class WeaponData : ItemData
     public int magazineSize = 15;
     public int maxReserveAmmo = 90;
     public float reloadTime = 1.5f;
+    public float recoilVertical = 1f;
+    public float recoilHorizontal = 0.3f;
     
     public int animationWeaponType = 1;
     

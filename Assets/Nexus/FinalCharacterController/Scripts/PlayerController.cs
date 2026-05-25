@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Nexus.FinalCharacterController
 {
@@ -13,6 +14,19 @@ namespace Nexus.FinalCharacterController
         public bool IsRotatingToTarget { get; private set; } = false;
         public bool IsAiming { get; set; } = false;
         public bool IsFiring { get; set; } = false;
+        
+        public bool IsAlignedForShooting => Quaternion.Angle(transform.rotation, Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f)) < 5f;
+
+        [Header("Recoil")]
+        public float recoilRecoverySpeed = 8f;
+
+        private Vector2 _recoilOffset = Vector2.zero;
+
+        public void AddRecoil(float vertical, float horizontal)
+        {
+            _recoilOffset.y -= vertical;
+            _recoilOffset.x += Random.Range(-horizontal, horizontal);
+        }
 
         [Header("Base Movement")]
         public float runAcceleration = 35f;
@@ -184,6 +198,7 @@ namespace Nexus.FinalCharacterController
 
         private void UpdateCameraRotation()
         {
+            _recoilOffset = Vector2.Lerp(_recoilOffset, Vector2.zero, recoilRecoverySpeed * Time.deltaTime);
             _cameraRotation.x += lookSenseH * _playerLocomotionInput.LookInput.x;
             _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookSenseV * _playerLocomotionInput.LookInput.y, -lookLimitV, lookLimitV);
 
@@ -197,9 +212,17 @@ namespace Nexus.FinalCharacterController
             float targetOffset = isAkAiming ? akAimRotationOffset : 0f;
             _currentAimOffset = Mathf.LerpAngle(_currentAimOffset, targetOffset, aimOffsetSpeed * Time.deltaTime);
 
-            if (IsAiming || IsFiring)
+            bool isShootingIntent = _weaponManager != null && _weaponManager.IsShootingIntent;
+
+            if (IsAiming)
             {
                 transform.rotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
+            }
+            else if (isShootingIntent)
+            {
+                Quaternion targetRotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, playerModelRotationSpeed * 1.5f * Time.deltaTime);
+                _playerTargetRotation.x = transform.eulerAngles.y;
             }
             else if (!isIdling)
             {
@@ -210,7 +233,11 @@ namespace Nexus.FinalCharacterController
                 UpdateIdleRotation(rotationTolerance);
             }
 
-            _playerCamera.transform.rotation = Quaternion.Euler(_cameraRotation.y, _cameraRotation.x, 0f);
+            _playerCamera.transform.rotation = Quaternion.Euler(
+                _cameraRotation.y + _recoilOffset.y,
+                _cameraRotation.x + _recoilOffset.x,
+                0f
+            );
 
             Vector3 camForwardProjectedXZ = new Vector3(_playerCamera.transform.forward.x, 0f, _playerCamera.transform.forward.z).normalized;
             Vector3 crossProduct = Vector3.Cross(transform.forward, camForwardProjectedXZ);

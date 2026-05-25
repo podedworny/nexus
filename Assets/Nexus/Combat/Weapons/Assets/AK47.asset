@@ -27,5 +27,7 @@ MonoBehaviour:
   magazineSize: 30
   maxReserveAmmo: 120
   reloadTime: 2.5
+  recoilVertical: 1
+  recoilHorizontal: 0.5
   animationWeaponType: 3
   description: ak47 mock

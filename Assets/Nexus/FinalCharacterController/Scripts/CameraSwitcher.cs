@@ -19,7 +19,6 @@ namespace Nexus.FinalCharacterController
         [SerializeField] private float _hideHeadDelay = 0.3f;
 
         private Coroutine _hideHeadCoroutine;
-        private bool _isAimButtonHeld = false;
 
         private void OnEnable()
         {
@@ -36,11 +35,7 @@ namespace Nexus.FinalCharacterController
 
         private void Update()
         {
-            bool isSprinting = _playerState != null && _playerState.CurrentPlayerMovementState == PlayerMovementState.Sprinting;
-            bool isReloading = _weaponManager != null && _weaponManager.IsReloading;
-
-            // Decyzja czy kamera ADS powinna być aktywna
-            bool shouldBeAiming = _isAimButtonHeld && !isSprinting && !isReloading && (_weaponManager != null && _weaponManager.CurrentWeaponIndex > 0);
+            bool shouldBeAiming = _playerController != null && _playerController.IsAiming && (_weaponManager != null && _weaponManager.CurrentWeaponIndex > 0);
 
             if (shouldBeAiming && !_fppCamera.activeSelf)
             {
@@ -54,8 +49,6 @@ namespace Nexus.FinalCharacterController
 
         public void OnAim(InputAction.CallbackContext context)
         {
-            if (context.started) _isAimButtonHeld = true;
-            else if (context.canceled) _isAimButtonHeld = false;
         }
 
         private void EnterAimCamera()

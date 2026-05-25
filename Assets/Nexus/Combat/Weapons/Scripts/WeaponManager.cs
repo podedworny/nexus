@@ -21,10 +21,12 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private bool _isAimingInput = false;
     private bool _isShooting = false;
     private bool _hasFiredThisClick = false;
+    private bool _pendingShot = false;
     private Vector3 _defaultCameraLocalPos;
     private Quaternion _defaultCameraLocalRot;
 
     public int CurrentAnimWeaponType { get; private set; } = 0;
+    public bool IsShootingIntent => _isShooting || _pendingShot;
     private float _nextFireTime = 0f;
     private bool _isReloading = false;
     private float _reloadTimer = 0f;
@@ -134,7 +136,11 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             if (_reloadTimer <= 0) FinishReload();
             return;
         }
-        if (_isShooting) Shoot();
+        if (_isShooting || _pendingShot)
+        {
+            if (_playerController != null && !_playerController.IsAlignedForShooting) return;
+            Shoot();
+        }
     }
 
     private void Shoot()
@@ -144,17 +150,27 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
         if (item is WeaponData weaponData)
         {
-            if (!weaponData.isAutomatic && _hasFiredThisClick) return;
+            if (!weaponData.isAutomatic && _hasFiredThisClick)
+            {
+                _pendingShot = false;
+                return;
+            }
             if (_ammoInSlots[_currentIndex] <= 0)
             {
+                _pendingShot = false;
                 if (_reserveAmmo[_currentIndex] > 0) StartReload();
                 return;
             }
             
             _ammoInSlots[_currentIndex]--;
             _hasFiredThisClick = true;
+            _pendingShot = false;
             _combatReadyTimer = combatReadyDuration;
             if (_animator != null) _animator.SetTrigger("Shoot");
+            if (_playerController != null)
+            {
+                _playerController.AddRecoil(weaponData.recoilVertical, weaponData.recoilHorizontal);
+            }
             _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate); 
             UpdateUIAmmo();
             
@@ -199,9 +215,14 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         }
         else if (item is MeleeWeaponData meleeData)
         {
-            if (_hasFiredThisClick) return;
+            if (_hasFiredThisClick)
+            {
+                _pendingShot = false;
+                return;
+            }
             
             _hasFiredThisClick = true;
+            _pendingShot = false;
             _combatReadyTimer = combatReadyDuration;
             if (_animator != null) _animator.SetTrigger("MeleeAttack");
             _animator.SetBool("isAttacking", true);
@@ -320,8 +341,16 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     public void OnShoot(InputAction.CallbackContext context)
     {
         if (_currentIndex <= 0 || _currentWeaponObject == null) return;
-        if (context.started) { _isShooting = true; _hasFiredThisClick = false; if (!_isReloading) Shoot(); }
-        else if (context.canceled) _isShooting = false;
+        if (context.started) 
+        { 
+            _isShooting = true; 
+            _hasFiredThisClick = false; 
+            _pendingShot = true;
+        }
+        else if (context.canceled) 
+        {
+            _isShooting = false;
+        }
     }
 
     public void OnReload(InputAction.CallbackContext context) { if (_currentIndex <= 0 || _currentWeaponObject == null) return; if (context.performed && !_isReloading) StartReload(); }
@@ -372,7 +401,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         CurrentAnimWeaponType = 0;
         if (_currentWeaponObject != null) Destroy(_currentWeaponObject);
-        _currentIndex = 0; _isAimingInput = false; _isShooting = false; _isReloading = false; _combatReadyTimer = 0f;
+        _currentIndex = 0; _isAimingInput = false; _isShooting = false; _pendingShot = false; _isReloading = false; _combatReadyTimer = 0f;
         if (_playerController != null) _playerController.IsFiring = false;
         if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); _animator.SetBool("isReloading", false);}
         if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1, 0); }
