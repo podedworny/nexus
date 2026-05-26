@@ -13,12 +13,15 @@ MonoBehaviour:
   m_Name: Pistol
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   itemName: Pistol
-  icon: {fileID: 21300000, guid: ed88520d69d32b04180b94c4b2e87749, type: 3}
+  icon: {fileID: 21300000, guid: bb6a5cb22063ec64eb873aad3b62bbff, type: 3}
+  description: Lightweight sidearm for desperate moments. Not powerful, but steady
+    hands and good aim can make it deadly in close encounters.
   weaponPrefab: {fileID: 1694449805434718, guid: 6f1a7354265853f44b0ed5e2e43676ad, type: 3}
   spawnPosition: {x: 0.0051, y: 0.0656, z: 0.1009}
   spawnRotation: {x: -34.208, y: -175.022, z: 6.634}
   spawnScale: {x: 1.1, y: 1.1, z: 1.1}
   cameraAimOffset: {x: 0, y: 0, z: 0}
+  cameraAimRotation: {x: 0, y: 0, z: 0}
   damage: 15
   fireRate: 0.5
   range: 100
@@ -26,4 +29,6 @@ MonoBehaviour:
   magazineSize: 15
   maxReserveAmmo: 90
   reloadTime: 1.7
-  description: Pistol mock
+  recoilVertical: 1
+  recoilHorizontal: 0.3
+  animationWeaponType: 1

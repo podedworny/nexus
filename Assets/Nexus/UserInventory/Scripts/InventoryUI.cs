@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.UI;
 using Nexus.FinalCharacterController;
+using System.Collections.Generic;
 
 public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
 {
@@ -20,21 +21,14 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
     [Header("Slot Border Images")]
     [SerializeField] private Image[] _slotBorderImages;
 
-    [Header("Weapon Stats UI")]
-    [SerializeField] private TextMeshProUGUI _weaponNameText;
-    [SerializeField] private TextMeshProUGUI _weaponTypeText;
-    [SerializeField] private TextMeshProUGUI _weaponDescriptionText;
-    [SerializeField] private TextMeshProUGUI _weaponDamageText;
-    [SerializeField] private TextMeshProUGUI _weaponFireRateText;
+    [Header("Item Info UI")]
+    [SerializeField] private TextMeshProUGUI _itemNameText;
+    [SerializeField] private TextMeshProUGUI _itemTypeText;
+    [SerializeField] private TextMeshProUGUI _itemDescriptionText;
 
-    [Header("Stat Bars")]
-    [SerializeField] private Image _damageBarFill;
-    [SerializeField] private Image _fireRateBarFill;
-    [SerializeField] private Image _rangeBarFill;
-
-    [Header("Stat Bar Max Values")]
-    [SerializeField] private float _maxDamage = 200f;
-    [SerializeField] private float _maxFireRate = 20f;
+    [Header("Dynamic Stats UI")]
+    [SerializeField] private GameObject _statRowPrefab;
+    [SerializeField] private Transform _statsContainer;
 
     private bool _isOpen = false;
     private int _selectedSlotIndex = 0;
@@ -116,7 +110,7 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
 
         _selectedSlotIndex = index;
         UpdateSelectionUI();
-        ShowWeaponStats(index);
+        ShowItemStats(index);
     }
 
     private void UpdateSelectionUI()
@@ -134,39 +128,67 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
         }
     }
 
-    private void ShowWeaponStats(int slotIndex)
+    private void ShowItemStats(int slotIndex)
     {
+        if (_statsContainer != null)
+        {
+            foreach (Transform child in _statsContainer)
+            {
+                child.gameObject.SetActive(false);
+                Destroy(child.gameObject);
+            }
+        }
+
         if (_inventoryManager == null) return;
         ItemData item = _inventoryManager.GetItem(slotIndex);
 
-        if (item is WeaponData weapon)
+        if (item != null)
         {
-            if (_weaponNameText != null) _weaponNameText.text = weapon.itemName.ToUpper();
-            if (_weaponTypeText != null) _weaponTypeText.text = "semi-auto · sidearm";
-            if (_weaponDescriptionText != null) _weaponDescriptionText.text = weapon.description;
-            if (_weaponDamageText != null) _weaponDamageText.text = weapon.damage.ToString();
-            if (_weaponFireRateText != null) _weaponFireRateText.text = weapon.fireRate.ToString("F1");
+            if (_itemNameText != null) _itemNameText.text = item.itemName.ToUpper();
+            if (_itemDescriptionText != null) _itemDescriptionText.text = item.description;
+            
+            if (_itemTypeText != null) 
+            {
+                if (item is WeaponData) _itemTypeText.text = "WEAPON";
+                else if (item is MeleeWeaponData) _itemTypeText.text = "MELEE";
+                else _itemTypeText.text = "CONSUMABLE";
+            }
 
-            if (_damageBarFill != null)
-                _damageBarFill.fillAmount = Mathf.Clamp01(weapon.damage / _maxDamage);
+            if (_statRowPrefab != null && _statsContainer != null)
+            {
+                List<ItemStat> stats = item.GetStats();
+                for (int i = 0; i < stats.Count; i++)
+                {
+                    GameObject rowObj = Instantiate(_statRowPrefab, _statsContainer);
+                    StatRowUI rowUI = rowObj.GetComponent<StatRowUI>();
+                    if (rowUI != null) rowUI.Setup(stats[i]);
 
-            if (_fireRateBarFill != null)
-                _fireRateBarFill.fillAmount = Mathf.Clamp01(weapon.fireRate / _maxFireRate);
+                    if (i < stats.Count - 1)
+                    {
+                        GameObject sep = new GameObject("StatSeparator", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                        sep.transform.SetParent(_statsContainer, false);
+                        UnityEngine.UI.Image sepImg = sep.GetComponent<UnityEngine.UI.Image>();
+                        sepImg.color = new Color(0.35f, 0.47f, 0.63f, 0.4f);
+                        UnityEngine.UI.LayoutElement le = sep.AddComponent<UnityEngine.UI.LayoutElement>();
+                        le.minHeight = 1;
+                        le.preferredHeight = 1;
+                        le.flexibleWidth = 1;
+                    }
+                }
 
-            if (_rangeBarFill != null)
-                _rangeBarFill.fillAmount = 0.48f;
+                Canvas.ForceUpdateCanvases();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_statsContainer.GetComponent<RectTransform>());
+                if (_statsContainer.parent != null)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(_statsContainer.parent.GetComponent<RectTransform>());
+                }
+            }
         }
         else
         {
-            if (_weaponNameText != null) _weaponNameText.text = item != null ? item.itemName.ToUpper() : "EMPTY";
-            if (_weaponTypeText != null) _weaponTypeText.text = "";
-            if (_weaponDescriptionText != null) _weaponDescriptionText.text = "-";
-            if (_weaponDamageText != null) _weaponDamageText.text = "";
-            if (_weaponFireRateText != null) _weaponFireRateText.text = "";
-
-            if (_damageBarFill != null) _damageBarFill.fillAmount = 0f;
-            if (_fireRateBarFill != null) _fireRateBarFill.fillAmount = 0f;
-            if (_rangeBarFill != null) _rangeBarFill.fillAmount = 0f;
+            if (_itemNameText != null) _itemNameText.text = "EMPTY";
+            if (_itemTypeText != null) _itemTypeText.text = "";
+            if (_itemDescriptionText != null) _itemDescriptionText.text = "-";
         }
     }
 

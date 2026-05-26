@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "New Weapon", menuName = "Weapons/Weapon Data")]
 public class WeaponData : ItemData
@@ -23,6 +24,16 @@ public class WeaponData : ItemData
     public float recoilHorizontal = 0.3f;
     
     public int animationWeaponType = 1;
-    
-    public string description;
+
+    public override List<ItemStat> GetStats()
+    {
+        List<ItemStat> stats = new List<ItemStat>();
+        Color accentColor = new Color(0.91f, 0.78f, 0.25f, 1f); 
+        Color defaultColor = new Color(0.85f, 0.89f, 0.94f, 0.7f);
+
+        stats.Add(new ItemStat { statName = "DAMAGE", statValue = damage.ToString(), fillPercentage = damage / 100f, showBar = true, barColor = accentColor });
+        stats.Add(new ItemStat { statName = "FIRE RATE", statValue = fireRate.ToString("F1"), fillPercentage = fireRate / 5f, showBar = true, barColor = defaultColor });
+        stats.Add(new ItemStat { statName = "RANGE", statValue = range.ToString(), fillPercentage = range / 200f, showBar = true, barColor = defaultColor });
+        return stats;
+    }
 }

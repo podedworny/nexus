@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: BaseballBat
   m_EditorClassIdentifier: Assembly-CSharp::MeleeWeaponData
   itemName: Baseball Bat
-  icon: {fileID: 21300000, guid: 385ca09a94b571f42954b98f31c67083, type: 3}
+  icon: {fileID: 21300000, guid: 582faa7bb50a789448b5a74d256e9385, type: 3}
+  description: "A simple piece of wood turned survival tool. Every swing is personal
+    \u2014 close, messy, and loud enough to remind you how near they are."
   weaponPrefab: {fileID: -4864356827620655212, guid: 594f375decf1e5940be033bb548e529b, type: 3}
   spawnPosition: {x: 0.0128, y: -0.2054, z: -0.0076}
   spawnRotation: {x: 7.268, y: 0, z: 0}
@@ -22,4 +24,3 @@ MonoBehaviour:
   attackRate: 1
   attackRange: 2.5
   hitRadius: 1
-  description: 

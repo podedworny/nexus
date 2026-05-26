@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: AK47
   m_EditorClassIdentifier: Assembly-CSharp::WeaponData
   itemName: AK47
-  icon: {fileID: 21300000, guid: af9484178219455889597ada8c1212ed, type: 3}
+  icon: {fileID: 21300000, guid: 124c9acc269b7334e95560c800f9f24f, type: 3}
+  description: A worn but reliable assault rifle that still tears through the night.
+    Loud, brutal, and effective against anything that keeps moving after dark.
   weaponPrefab: {fileID: 1487774384131766, guid: ee329c3cd08e58645834d20702d7f6c6, type: 3}
   spawnPosition: {x: 0.0036, y: 0.08, z: 0.1549}
   spawnRotation: {x: -10.177, y: -169.175, z: -8.96}
@@ -30,4 +32,3 @@ MonoBehaviour:
   recoilVertical: 1
   recoilHorizontal: 0.5
   animationWeaponType: 3
-  description: ak47 mock
