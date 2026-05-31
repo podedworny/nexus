@@ -7,6 +7,9 @@
 /[Uu]serSettings/
 /[Mm]emoryCaptures/
 /[Rr]ecordings/
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Aa]ssets/[Ss]treaming[Aa]ssets/aa.meta
+/[Aa]ssets/[Ss]treaming[Aa]ssets/aa/*
 /.vscode/
 /.idea/
 /.vs/
@@ -26,10 +29,16 @@
 *.mdb
 *.opendb
 *.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
 *.apk
 *.aab
 *.unitypackage
 *.app/
+*.xcworkspace/
+*.xcuserstate
+*.xcuserdata/
 crashlytics-build.properties
 .DS_Store
 .DS_Store?
