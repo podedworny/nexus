@@ -59,10 +59,10 @@ public class EnemySpawner : MonoBehaviour
 
         for (int i = 0; i < totalZombies; i++)
         {
-            Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-            GameObject prefabToSpawn = zombiePrefabs[Random.Range(0, zombiePrefabs.Length)];
-            GameObject spawnedZombie = Instantiate(prefabToSpawn, spawnPoint.position, spawnPoint.rotation);
-            
+            Transform selectedSpawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+            GameObject selectedZombiePrefab = zombiePrefabs[Random.Range(0, zombiePrefabs.Length)];
+            GameObject spawnedZombie = Instantiate(selectedZombiePrefab, selectedSpawnPoint.position, selectedSpawnPoint.rotation);
+
             float finalHealth = baseHealth;
             float finalDamage = baseDamage;
             float finalSpeed = baseSpeed;
@@ -73,10 +73,10 @@ public class EnemySpawner : MonoBehaviour
                 finalDamage *= 2.5f;
                 finalSpeed *= 1.2f;
                 spawnedZombie.transform.localScale = new Vector3(1.8f, 1.8f, 1.8f);
-                
+
                 SetAgentColor(spawnedZombie, Color.red);
                 AddAura(spawnedZombie, Color.red, 2.5f);
-                
+
                 spawnedBosses++;
             }
             else if (spawnedMiniBosses < miniBossCount)
@@ -85,18 +85,18 @@ public class EnemySpawner : MonoBehaviour
                 finalDamage *= 1.5f;
                 finalSpeed *= 1.1f;
                 spawnedZombie.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
-                
+
                 Color orange = new Color(1f, 0.5f, 0f);
                 SetAgentColor(spawnedZombie, orange);
                 AddAura(spawnedZombie, orange, 1.8f);
-                
+
                 spawnedMiniBosses++;
             }
             else
             {
                 float randomScale = Random.Range(0.85f, 1.15f);
                 spawnedZombie.transform.localScale = new Vector3(randomScale, randomScale, randomScale);
-                
+
                 finalHealth *= Random.Range(0.8f, 1.2f);
                 finalDamage *= Random.Range(0.8f, 1.2f);
                 finalSpeed *= Random.Range(0.8f, 1.2f);
@@ -111,10 +111,10 @@ public class EnemySpawner : MonoBehaviour
                     SetAgentColor(spawnedZombie, mutedColors[Random.Range(0, mutedColors.Length)]);
                 }
             }
-            
+
             ZombieHealth health = spawnedZombie.GetComponent<ZombieHealth>();
             if (health != null) health.Initialize(finalHealth);
-            
+
             ZombieAI ai = spawnedZombie.GetComponent<ZombieAI>();
             if (ai != null) ai.Initialize(finalDamage, finalSpeed);
         }
@@ -123,14 +123,14 @@ public class EnemySpawner : MonoBehaviour
     private void SetAgentColor(GameObject target, Color color)
     {
         Renderer[] renderers = target.GetComponentsInChildren<Renderer>();
-        foreach (Renderer r in renderers)
+        foreach (Renderer renderer in renderers)
         {
-            if (r is ParticleSystemRenderer) continue;
+            if (renderer is ParticleSystemRenderer) continue;
 
-            r.material.color = color;
-            if (r.material.HasProperty("_BaseColor"))
+            renderer.material.color = color;
+            if (renderer.material.HasProperty("_BaseColor"))
             {
-                r.material.SetColor("_BaseColor", color);
+                renderer.material.SetColor("_BaseColor", color);
             }
         }
     }

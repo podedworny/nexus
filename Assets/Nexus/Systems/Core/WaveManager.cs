@@ -151,13 +151,15 @@ public class WaveManager : MonoBehaviour
     {
         if (!showDebugUI || !isDebugMenuOpen || currentState != GameState.Day) return;
 
-        GUIStyle style = new GUIStyle(GUI.skin.box);
-        style.fontSize = 14;
-        
-        GUILayout.BeginArea(new Rect(10, 10, 150, 80), style);
+        GUIStyle debugBoxStyle = new GUIStyle(GUI.skin.box)
+        {
+            fontSize = 14
+        };
+
+        GUILayout.BeginArea(new Rect(10, 10, 150, 80), debugBoxStyle);
         GUILayout.Label("Debug Wave:");
         debugWaveString = GUILayout.TextField(debugWaveString);
-        
+
         if (GUILayout.Button("Set Wave"))
         {
             if (int.TryParse(debugWaveString, out int parsedWave))

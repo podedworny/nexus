@@ -46,11 +46,12 @@ public class ZombieAI : MonoBehaviour
         if (_playerTransform == null || !_agent.isOnNavMesh) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
+        bool isInAttackRange = distanceToPlayer <= attackRange;
 
-        if (distanceToPlayer <= attackRange)
+        if (isInAttackRange)
         {
             _agent.isStopped = true;
-            
+
             if (_animator != null)
             {
                 _animator.SetBool("isWalking", false);
@@ -66,12 +67,12 @@ public class ZombieAI : MonoBehaviour
         {
             _agent.isStopped = false;
             _agent.SetDestination(_playerTransform.position);
-            
+
             if (_animator != null)
             {
                 bool isMoving = _agent.velocity.magnitude > 0.1f;
                 _animator.SetBool("isWalking", isMoving);
-                
+
                 if (isMoving)
                 {
                     _animator.speed = _agent.velocity.magnitude;
@@ -93,8 +94,11 @@ public class ZombieAI : MonoBehaviour
     public void DealDamageToPlayer()
     {
         if (_playerStats == null || _playerTransform == null) return;
-        float dist = Vector3.Distance(transform.position, _playerTransform.position);
-        if (dist <= attackRange * 1.2f)
+
+        float distanceToPlayer = Vector3.Distance(transform.position, _playerTransform.position);
+        if (distanceToPlayer <= attackRange * 1.2f)
+        {
             _playerStats.TakeDamage(damage);
+        }
     }
 }
