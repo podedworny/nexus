@@ -86,20 +86,20 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
         if (naZywoUstawianieBroni && _currentWeaponObject != null && _currentIndex >= 0 && _inventoryManager != null)
         {
-            ItemData item = _inventoryManager.GetItem(_currentIndex);
-            if (item != null)
+            ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+            if (currentItem != null)
             {
-                if (item is WeaponData data)
+                if (currentItem is WeaponData weaponData)
                 {
-                    _currentWeaponObject.transform.localPosition = data.spawnPosition;
-                    _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
-                    _currentWeaponObject.transform.localScale = data.spawnScale;
+                    _currentWeaponObject.transform.localPosition = weaponData.spawnPosition;
+                    _currentWeaponObject.transform.localRotation = Quaternion.Euler(weaponData.spawnRotation);
+                    _currentWeaponObject.transform.localScale = weaponData.spawnScale;
                 }
-                else if (item is MeleeWeaponData meleeData)
+                else if (currentItem is MeleeWeaponData meleeWeaponData)
                 {
-                    _currentWeaponObject.transform.localPosition = meleeData.spawnPosition;
-                    _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeData.spawnRotation);
-                    _currentWeaponObject.transform.localScale = meleeData.spawnScale;
+                    _currentWeaponObject.transform.localPosition = meleeWeaponData.spawnPosition;
+                    _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeWeaponData.spawnRotation);
+                    _currentWeaponObject.transform.localScale = meleeWeaponData.spawnScale;
                 }
             }
         }
@@ -108,11 +108,11 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         {
             if (_isAimingInput && !isSprinting && !_isReloading && _inventoryManager != null && _currentIndex > 0)
             {
-                ItemData item = _inventoryManager.GetItem(_currentIndex);
-                if (item is WeaponData data)
+                ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+                if (currentItem is WeaponData weaponData)
                 {
-                    _firstPersonAimCamera.localPosition = Vector3.Lerp(_firstPersonAimCamera.localPosition, data.cameraAimOffset, Time.deltaTime * cameraTransitionSpeed);
-                    _firstPersonAimCamera.localRotation = Quaternion.Lerp(_firstPersonAimCamera.localRotation, Quaternion.Euler(data.cameraAimRotation), Time.deltaTime * cameraTransitionSpeed);
+                    _firstPersonAimCamera.localPosition = Vector3.Lerp(_firstPersonAimCamera.localPosition, weaponData.cameraAimOffset, Time.deltaTime * cameraTransitionSpeed);
+                    _firstPersonAimCamera.localRotation = Quaternion.Lerp(_firstPersonAimCamera.localRotation, Quaternion.Euler(weaponData.cameraAimRotation), Time.deltaTime * cameraTransitionSpeed);
                 }
             }
             else
@@ -146,9 +146,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private void Shoot()
     {
         if (Time.time < _nextFireTime || _isReloading) return;
-        ItemData item = _inventoryManager.GetItem(_currentIndex);
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
 
-        if (item is WeaponData weaponData)
+        if (currentItem is WeaponData weaponData)
         {
             if (!weaponData.isAutomatic && _hasFiredThisClick)
             {
@@ -213,7 +213,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _animator.SetTrigger("Shoot");
             }
         }
-        else if (item is MeleeWeaponData meleeData)
+        else if (currentItem is MeleeWeaponData meleeWeaponData)
         {
             if (_hasFiredThisClick)
             {
@@ -226,7 +226,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             _combatReadyTimer = combatReadyDuration;
             if (_animator != null) _animator.SetTrigger("MeleeAttack");
             _animator.SetBool("isAttacking", true);
-            _nextFireTime = Time.time + Mathf.Max(0.01f, meleeData.attackRate);
+            _nextFireTime = Time.time + Mathf.Max(0.01f, meleeWeaponData.attackRate);
         }
     }
     
@@ -240,8 +240,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     public void PerformMeleeStrike()
     {
         if (_currentIndex <= 0) { return; }
-        ItemData item = _inventoryManager.GetItem(_currentIndex);
-        if (!(item is MeleeWeaponData meleeWeapon)) { return; }
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+        if (!(currentItem is MeleeWeaponData meleeWeapon)) { return; }
 
         float actualDamage = meleeWeapon.damage;
         if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
@@ -265,8 +265,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     private void StartReload()
     {
-        ItemData item = _inventoryManager.GetItem(_currentIndex);
-        if (!(item is WeaponData weaponData) || _ammoInSlots[_currentIndex] == weaponData.magazineSize || _reserveAmmo[_currentIndex] <= 0) return;
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+        if (!(currentItem is WeaponData weaponData) || _ammoInSlots[_currentIndex] == weaponData.magazineSize || _reserveAmmo[_currentIndex] <= 0) return;
+
         _isReloading = true;
         _reloadTimer = weaponData.reloadTime;
         if (_animator != null) _animator.SetTrigger("Reload");
@@ -277,8 +278,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         _isReloading = false;
         _animator.SetBool("isReloading", false);
-        ItemData item = _inventoryManager.GetItem(_currentIndex);
-        if (item is WeaponData weaponData)
+
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+        if (currentItem is WeaponData weaponData)
         {
             int ammoToLoad = Mathf.Min(weaponData.magazineSize - _ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex]);
             _ammoInSlots[_currentIndex] += ammoToLoad;
@@ -291,8 +293,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         if (_currentIndex > 0 && _inventoryManager != null)
         {
-            ItemData item = _inventoryManager.GetItem(_currentIndex);
-            if (item is WeaponData weaponData)
+            ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+            if (currentItem is WeaponData weaponData)
             {
                 _reserveAmmo[_currentIndex] += weaponData.magazineSize * 3;
                 UpdateUIAmmo();
@@ -304,8 +306,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     { 
         if (_uiManager != null) 
         {
-            ItemData item = _inventoryManager.GetItem(_currentIndex);
-            if (item is WeaponData weaponData)
+            ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+            if (currentItem is WeaponData weaponData)
             {
                 _uiManager.UpdateAmmoDisplay(_ammoInSlots[_currentIndex], _reserveAmmo[_currentIndex], weaponData.magazineSize);
             }
@@ -322,17 +324,24 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         else if (_currentIndex == indexB) { _currentIndex = indexA; if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex); }
     }
 
-    public void OnWeapon1(InputAction.CallbackContext context) { if (context.performed) { UnequipCurrent(); if (_uiManager != null) _uiManager.UpdateActiveSlot(0); } }
-    public void OnWeapon2(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(1) != null) { EquipWeapon(1); if (_uiManager != null) _uiManager.UpdateActiveSlot(1); } }
-    public void OnWeapon3(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(2) != null) { EquipWeapon(2); if (_uiManager != null) _uiManager.UpdateActiveSlot(2); } }
-    public void OnWeapon4(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(3) != null) { EquipWeapon(3); if (_uiManager != null) _uiManager.UpdateActiveSlot(3); } }
-    public void OnWeapon5(InputAction.CallbackContext context) { if (context.performed && _inventoryManager != null && _inventoryManager.GetItem(4) != null) { EquipWeapon(4); if (_uiManager != null) _uiManager.UpdateActiveSlot(4); } }
+    public void OnWeapon1(InputAction.CallbackContext context)
+    {
+        if (!context.performed) return;
+
+        UnequipCurrent();
+        if (_uiManager != null) _uiManager.UpdateActiveSlot(0);
+    }
+
+    public void OnWeapon2(InputAction.CallbackContext context) => TryEquipSlot(context, 1);
+    public void OnWeapon3(InputAction.CallbackContext context) => TryEquipSlot(context, 2);
+    public void OnWeapon4(InputAction.CallbackContext context) => TryEquipSlot(context, 3);
+    public void OnWeapon5(InputAction.CallbackContext context) => TryEquipSlot(context, 4);
 
     public void OnAim(InputAction.CallbackContext context)
     {
         if (_currentIndex <= 0 || _currentWeaponObject == null) return;
-        ItemData item = _inventoryManager.GetItem(_currentIndex);
-        if (item is MeleeWeaponData) return;
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+        if (currentItem is MeleeWeaponData) return;
 
         if (context.started) _isAimingInput = true;
         else if (context.canceled) _isAimingInput = false;
@@ -355,38 +364,47 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     public void OnReload(InputAction.CallbackContext context) { if (_currentIndex <= 0 || _currentWeaponObject == null) return; if (context.performed && !_isReloading) StartReload(); }
 
+    private void TryEquipSlot(InputAction.CallbackContext context, int slotIndex)
+    {
+        if (!context.performed || _inventoryManager == null || _inventoryManager.GetItem(slotIndex) == null) return;
+
+        EquipWeapon(slotIndex);
+        if (_uiManager != null) _uiManager.UpdateActiveSlot(slotIndex);
+    }
+
     private void EquipWeapon(int index)
     {
         if (index == _currentIndex || _inventoryManager == null) return;
-        ItemData item = _inventoryManager.GetItem(index);
-        if (item == null) return;
+        ItemData selectedItem = _inventoryManager.GetItem(index);
+        if (selectedItem == null) return;
+
         UnequipCurrent();
         _currentIndex = index;
         
-        if (item is WeaponData data)
+        if (selectedItem is WeaponData weaponData)
         {
-            if (!_initializedAmmo[index]) { _ammoInSlots[index] = data.magazineSize; _reserveAmmo[index] = data.maxReserveAmmo; _initializedAmmo[index] = true; }
-            if (data.weaponPrefab != null)
+            if (!_initializedAmmo[index]) { _ammoInSlots[index] = weaponData.magazineSize; _reserveAmmo[index] = weaponData.maxReserveAmmo; _initializedAmmo[index] = true; }
+            if (weaponData.weaponPrefab != null)
             {
-                _currentWeaponObject = Instantiate(data.weaponPrefab, _weaponSocket);
-                _currentWeaponObject.transform.localPosition = data.spawnPosition;
-                _currentWeaponObject.transform.localRotation = Quaternion.Euler(data.spawnRotation);
-                _currentWeaponObject.transform.localScale = data.spawnScale;
+                _currentWeaponObject = Instantiate(weaponData.weaponPrefab, _weaponSocket);
+                _currentWeaponObject.transform.localPosition = weaponData.spawnPosition;
+                _currentWeaponObject.transform.localRotation = Quaternion.Euler(weaponData.spawnRotation);
+                _currentWeaponObject.transform.localScale = weaponData.spawnScale;
             }
             if (_animator != null) { 
                 _animator.SetBool("HasWeapon", true); 
-                _animator.SetInteger("WeaponType", data.animationWeaponType);
-                CurrentAnimWeaponType = data.animationWeaponType;
+                _animator.SetInteger("WeaponType", weaponData.animationWeaponType);
+                CurrentAnimWeaponType = weaponData.animationWeaponType;
             }
         }
-        else if (item is MeleeWeaponData meleeData)
+        else if (selectedItem is MeleeWeaponData meleeWeaponData)
         {
-            if (meleeData.weaponPrefab != null)
+            if (meleeWeaponData.weaponPrefab != null)
             {
-                _currentWeaponObject = Instantiate(meleeData.weaponPrefab, _weaponSocket);
-                _currentWeaponObject.transform.localPosition = meleeData.spawnPosition;
-                _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeData.spawnRotation);
-                _currentWeaponObject.transform.localScale = meleeData.spawnScale;
+                _currentWeaponObject = Instantiate(meleeWeaponData.weaponPrefab, _weaponSocket);
+                _currentWeaponObject.transform.localPosition = meleeWeaponData.spawnPosition;
+                _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeWeaponData.spawnRotation);
+                _currentWeaponObject.transform.localScale = meleeWeaponData.spawnScale;
             }
             if (_animator != null) { 
                 _animator.SetBool("HasWeapon", true); 
