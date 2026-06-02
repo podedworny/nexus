@@ -10,12 +10,12 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     [SerializeField] private UIManager _uiManager;
     [SerializeField] private InventoryManager _inventoryManager;
     [SerializeField] private Transform _firstPersonAimCamera;
-    
+
     public bool naZywoUstawianieBroni = false;
     public float cameraTransitionSpeed = 15f;
     public LineRenderer bulletTrailPrefab;
-    public float combatReadyDuration = 2.0f; 
-    
+    public float combatReadyDuration = 2.0f;
+
     private GameObject _currentWeaponObject;
     private int _currentIndex = -1;
     private bool _isAimingInput = false;
@@ -34,9 +34,14 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private int[] _ammoInSlots = new int[5];
     private int[] _reserveAmmo = new int[5];
     private bool[] _initializedAmmo = new bool[5];
+    private int[] _weaponLevels = new int[5];
 
     private PlayerController _playerController;
     private PlayerState _playerState;
+    private PlayerStats _playerStats;
+
+    private bool _isConsuming = false;
+    private float _consumableTimer = 0f;
 
     public int CurrentWeaponIndex => _currentIndex;
     public bool IsReloading => _isReloading;
@@ -45,6 +50,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         _playerController = GetComponent<PlayerController>();
         _playerState = GetComponent<PlayerState>();
+        _playerStats = GetComponent<PlayerStats>();
     }
 
     private void OnEnable()
@@ -76,7 +82,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         bool isSprinting = _playerState != null && _playerState.CurrentPlayerMovementState == PlayerMovementState.Sprinting;
         bool bodyAimState = (_isAimingInput && !isSprinting && !_isReloading) || _combatReadyTimer > 0f;
 
-        if (_animator != null && _currentIndex > 0) 
+        if (_animator != null && _currentIndex > 0)
         {
             if (_animator.GetBool("isAiming") != bodyAimState) _animator.SetBool("isAiming", bodyAimState);
         }
@@ -129,13 +135,53 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     {
         if (_animator != null && _animator.GetBool("isAttacking") && Time.time >= _nextFireTime)
             _animator.SetBool("isAttacking", false);
+
         if (_currentIndex <= 0) return;
+
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+
+        if (currentItem is ConsumableData consumableData)
+        {
+            if (_isShooting && _playerStats != null && _playerStats.currentHealth < _playerStats.GetActualMaxHealth())
+            {
+                if (!_isConsuming)
+                {
+                    _isConsuming = true;
+                    _consumableTimer = 0f;
+                }
+
+                _consumableTimer += Time.deltaTime;
+
+                if (_consumableTimer >= consumableData.useTime)
+                {
+                    _playerStats.Heal(consumableData.healAmount);
+                    _inventoryManager.ConsumeItem(_currentIndex);
+                    _isConsuming = false;
+                    _consumableTimer = 0f;
+                    _isShooting = false;
+                    _hasFiredThisClick = true;
+
+                    if (_inventoryManager.GetItem(_currentIndex) == null)
+                    {
+                        UnequipCurrent();
+                    }
+                }
+            }
+            else
+            {
+                _isConsuming = false;
+                _consumableTimer = 0f;
+            }
+            return;
+        }
+
         if (_isReloading)
         {
             _reloadTimer -= Time.deltaTime;
             if (_reloadTimer <= 0) FinishReload();
             return;
         }
+
         if (_isShooting || _pendingShot)
         {
             if (_playerController != null && !_playerController.IsAlignedForShooting) return;
@@ -161,7 +207,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 if (_reserveAmmo[_currentIndex] > 0) StartReload();
                 return;
             }
-            
+
             _ammoInSlots[_currentIndex]--;
             _hasFiredThisClick = true;
             _pendingShot = false;
@@ -171,19 +217,23 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             {
                 _playerController.AddRecoil(weaponData.recoilVertical, weaponData.recoilHorizontal);
             }
-            _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate); 
+            _nextFireTime = Time.time + Mathf.Max(0.01f, weaponData.fireRate);
             UpdateUIAmmo();
-            
+
             Ray ray = new Ray(Camera.main.transform.position, Camera.main.transform.forward);
             Vector3 hitPoint;
 
             float actualDamage = weaponData.damage;
             if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
 
+            int level = _weaponLevels[_currentIndex];
+            float bonusMultiplier = level > 1 ? (level - 1) * 0.3f : 0f;
+            actualDamage *= (1f + bonusMultiplier);
+
             if (Physics.Raycast(ray, out RaycastHit hit, weaponData.range))
             {
                 hitPoint = hit.point;
-                
+
                 ZombieHealth zombie = hit.collider.GetComponentInParent<ZombieHealth>();
                 if (zombie != null)
                 {
@@ -203,13 +253,13 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 trail.SetPosition(1, hitPoint);
                 Destroy(trail.gameObject, 0.05f);
             }
-            
+
             if (_animator != null)
             {
                 AnimationClip recoilClip = GetAnimClipByName("AK47_Fire");
                 if (recoilClip != null)
                     _animator.SetFloat("RecoilSpeed", recoilClip.length / Mathf.Max(0.01f, weaponData.fireRate));
-            
+
                 _animator.SetTrigger("Shoot");
             }
         }
@@ -220,7 +270,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _pendingShot = false;
                 return;
             }
-            
+
             _hasFiredThisClick = true;
             _pendingShot = false;
             _combatReadyTimer = combatReadyDuration;
@@ -229,7 +279,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
             _nextFireTime = Time.time + Mathf.Max(0.01f, meleeWeaponData.attackRate);
         }
     }
-    
+
     private AnimationClip GetAnimClipByName(string clipName)
     {
         foreach (AnimationClip clip in _animator.runtimeAnimatorController.animationClips)
@@ -289,22 +339,50 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         }
     }
 
-    public void BuyAmmo()
+    public bool CanBuyAmmo(int index)
     {
-        if (_currentIndex > 0 && _inventoryManager != null)
+        if (index > 0 && index < _reserveAmmo.Length && _inventoryManager != null)
         {
-            ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+            ItemData currentItem = _inventoryManager.GetItem(index);
             if (currentItem is WeaponData weaponData)
             {
-                _reserveAmmo[_currentIndex] += weaponData.magazineSize * 3;
-                UpdateUIAmmo();
+                return _reserveAmmo[index] < weaponData.maxReserveAmmo;
+            }
+        }
+        return false;
+    }
+
+    public void BuyAmmo(int index, int amount)
+    {
+        if (index > 0 && index < _reserveAmmo.Length && _inventoryManager != null)
+        {
+            ItemData currentItem = _inventoryManager.GetItem(index);
+            if (currentItem is WeaponData weaponData)
+            {
+                _reserveAmmo[index] += amount;
+                if (_reserveAmmo[index] > weaponData.maxReserveAmmo)
+                {
+                    _reserveAmmo[index] = weaponData.maxReserveAmmo;
+                }
+                if (index == _currentIndex) UpdateUIAmmo();
             }
         }
     }
 
-    private void UpdateUIAmmo() 
-    { 
-        if (_uiManager != null) 
+    public int GetWeaponLevel(int index)
+    {
+        if (index >= 0 && index < _weaponLevels.Length) return _weaponLevels[index];
+        return 0;
+    }
+
+    public void UpgradeWeapon(int index)
+    {
+        if (index >= 0 && index < _weaponLevels.Length) _weaponLevels[index]++;
+    }
+
+    private void UpdateUIAmmo()
+    {
+        if (_uiManager != null)
         {
             ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
             if (currentItem is WeaponData weaponData)
@@ -320,6 +398,22 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     private void HandleItemsSwapped(int indexA, int indexB)
     {
+        int tempAmmo = _ammoInSlots[indexA];
+        _ammoInSlots[indexA] = _ammoInSlots[indexB];
+        _ammoInSlots[indexB] = tempAmmo;
+
+        int tempRes = _reserveAmmo[indexA];
+        _reserveAmmo[indexA] = _reserveAmmo[indexB];
+        _reserveAmmo[indexB] = tempRes;
+
+        bool tempInit = _initializedAmmo[indexA];
+        _initializedAmmo[indexA] = _initializedAmmo[indexB];
+        _initializedAmmo[indexB] = tempInit;
+
+        int tempLvl = _weaponLevels[indexA];
+        _weaponLevels[indexA] = _weaponLevels[indexB];
+        _weaponLevels[indexB] = tempLvl;
+
         if (_currentIndex == indexA) { _currentIndex = indexB; if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex); }
         else if (_currentIndex == indexB) { _currentIndex = indexA; if (_uiManager != null) _uiManager.UpdateActiveSlot(_currentIndex); }
     }
@@ -339,9 +433,10 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     public void OnAim(InputAction.CallbackContext context)
     {
-        if (_currentIndex <= 0 || _currentWeaponObject == null) return;
+        if (_currentIndex <= 0) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
-        if (currentItem is MeleeWeaponData) return;
+        if (currentItem is MeleeWeaponData || currentItem is ConsumableData) return;
+        if (_currentWeaponObject == null) return;
 
         if (context.started) _isAimingInput = true;
         else if (context.canceled) _isAimingInput = false;
@@ -349,20 +444,33 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     public void OnShoot(InputAction.CallbackContext context)
     {
-        if (_currentIndex <= 0 || _currentWeaponObject == null) return;
-        if (context.started) 
-        { 
-            _isShooting = true; 
-            _hasFiredThisClick = false; 
+        if (_currentIndex <= 0) return;
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+
+        if (!(currentItem is ConsumableData) && _currentWeaponObject == null) return;
+
+        if (context.started)
+        {
+            _isShooting = true;
+            _hasFiredThisClick = false;
             _pendingShot = true;
         }
-        else if (context.canceled) 
+        else if (context.canceled)
         {
             _isShooting = false;
+            _isConsuming = false;
+            _consumableTimer = 0f;
         }
     }
 
-    public void OnReload(InputAction.CallbackContext context) { if (_currentIndex <= 0 || _currentWeaponObject == null) return; if (context.performed && !_isReloading) StartReload(); }
+    public void OnReload(InputAction.CallbackContext context)
+    {
+        if (_currentIndex <= 0) return;
+        ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
+        if (!(currentItem is ConsumableData) && _currentWeaponObject == null) return;
+
+        if (context.performed && !_isReloading) StartReload();
+    }
 
     private void TryEquipSlot(InputAction.CallbackContext context, int slotIndex)
     {
@@ -380,7 +488,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
         UnequipCurrent();
         _currentIndex = index;
-        
+
         if (selectedItem is WeaponData weaponData)
         {
             if (!_initializedAmmo[index]) { _ammoInSlots[index] = weaponData.magazineSize; _reserveAmmo[index] = weaponData.maxReserveAmmo; _initializedAmmo[index] = true; }
@@ -391,8 +499,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _currentWeaponObject.transform.localRotation = Quaternion.Euler(weaponData.spawnRotation);
                 _currentWeaponObject.transform.localScale = weaponData.spawnScale;
             }
-            if (_animator != null) { 
-                _animator.SetBool("HasWeapon", true); 
+            if (_animator != null) {
+                _animator.SetBool("HasWeapon", true);
                 _animator.SetInteger("WeaponType", weaponData.animationWeaponType);
                 CurrentAnimWeaponType = weaponData.animationWeaponType;
             }
@@ -406,8 +514,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 _currentWeaponObject.transform.localRotation = Quaternion.Euler(meleeWeaponData.spawnRotation);
                 _currentWeaponObject.transform.localScale = meleeWeaponData.spawnScale;
             }
-            if (_animator != null) { 
-                _animator.SetBool("HasWeapon", true); 
+            if (_animator != null) {
+                _animator.SetBool("HasWeapon", true);
                 _animator.SetInteger("WeaponType", 2);
                 CurrentAnimWeaponType = 2;
             }
@@ -420,8 +528,48 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         CurrentAnimWeaponType = 0;
         if (_currentWeaponObject != null) Destroy(_currentWeaponObject);
         _currentIndex = 0; _isAimingInput = false; _isShooting = false; _pendingShot = false; _isReloading = false; _combatReadyTimer = 0f;
+        _isConsuming = false; _consumableTimer = 0f;
         if (_playerController != null) _playerController.IsFiring = false;
         if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); _animator.SetBool("isReloading", false);}
         if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1, 0); }
+    }
+
+    private void OnGUI()
+    {
+        if (_isConsuming)
+        {
+            float useTime = 1f;
+            if (_inventoryManager != null && _inventoryManager.GetItem(_currentIndex) is ConsumableData cd)
+            {
+                useTime = cd.useTime;
+            }
+
+            float progress = Mathf.Clamp01(_consumableTimer / useTime);
+
+            float width = 200f;
+            float height = 20f;
+            float x = (Screen.width - width) / 2f;
+            float y = Screen.height / 2f + 50f;
+
+            Rect bgRect = new Rect(x, y, width, height);
+            Rect fgRect = new Rect(x, y, width * progress, height);
+
+            Texture2D tex = Texture2D.whiteTexture;
+
+            GUI.color = new Color(0.08f, 0.12f, 0.19f, 0.9f);
+            GUI.DrawTexture(bgRect, tex);
+            
+            GUI.color = new Color(0.91f, 0.78f, 0.25f, 1f);
+            GUI.DrawTexture(fgRect, tex);
+
+            GUI.color = Color.white;
+            GUIStyle style = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontSize = 14,
+                fontStyle = FontStyle.Bold
+            };
+            GUI.Label(bgRect, "HEALING...", style);
+        }
     }
 }

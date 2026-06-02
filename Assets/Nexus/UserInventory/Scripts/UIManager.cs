@@ -27,7 +27,7 @@ public class UIManager : MonoBehaviour
     public GameObject ammoPipPrefab;
     public Color pipActiveColor = new Color(0.85f, 0.9f, 0.95f, 0.7f);
     public Color pipUsedColor = new Color(0.85f, 0.9f, 0.95f, 0.15f);
-    
+
     private List<Image> instantiatedPips = new List<Image>();
     private int currentMagCapacity = -1;
 
@@ -41,6 +41,7 @@ public class UIManager : MonoBehaviour
         {
             playerStats.OnHealthChanged += UpdateHealthBar;
             playerStats.OnStaminaChanged += UpdateStaminaBar;
+            playerStats.OnCurrencyChanged += UpdateCurrencyDisplay;
         }
         if (inventoryManager != null) inventoryManager.OnInventoryChanged += UpdateHotbarIcons;
     }
@@ -51,6 +52,7 @@ public class UIManager : MonoBehaviour
         {
             playerStats.OnHealthChanged -= UpdateHealthBar;
             playerStats.OnStaminaChanged -= UpdateStaminaBar;
+            playerStats.OnCurrencyChanged -= UpdateCurrencyDisplay;
         }
         if (inventoryManager != null) inventoryManager.OnInventoryChanged -= UpdateHotbarIcons;
     }
@@ -66,6 +68,7 @@ public class UIManager : MonoBehaviour
         {
             UpdateHealthBar(playerStats.currentHealth, playerStats.maxHealth);
             UpdateStaminaBar(playerStats.currentStamina, playerStats.maxStamina);
+            UpdateCurrencyDisplay(playerStats.currency);
         }
 
         UpdateHotbarIcons();
@@ -76,13 +79,20 @@ public class UIManager : MonoBehaviour
     {
         if (GameManager.Instance != null)
         {
-            if (currencyText != null) currencyText.text = "<color=#FACC15>$</color> " + GameManager.Instance.currency;
             UpdateLivesIcons(GameManager.Instance.currentLives);
         }
 
         if (WaveManager.Instance != null && waveText != null)
         {
             waveText.text = WaveManager.Instance.currentWave.ToString("D2");
+        }
+    }
+
+    private void UpdateCurrencyDisplay(int amount)
+    {
+        if (currencyText != null)
+        {
+            currencyText.text = "<color=#FACC15>$</color> " + amount;
         }
     }
 
@@ -109,22 +119,42 @@ public class UIManager : MonoBehaviour
             if (hotbarSlots[i] == null || hotbarSlots[i].transform.childCount == 0) continue;
 
             Transform iconTransform = hotbarSlots[i].transform.Find("Icon");
-            if (iconTransform == null) continue;
-            
-            Image iconImage = iconTransform.GetComponent<Image>();
-            if (iconImage == null) continue;
-
-            ItemData item = inventoryManager.GetItem(i);
-
-            if (item != null && item.icon != null)
+            if (iconTransform != null)
             {
-                iconImage.sprite = item.icon;
-                iconImage.color = new Color(1, 1, 1, 1);
+                Image iconImage = iconTransform.GetComponent<Image>();
+                if (iconImage != null)
+                {
+                    ItemData item = inventoryManager.GetItem(i);
+                    if (item != null && item.icon != null)
+                    {
+                        iconImage.sprite = item.icon;
+                        iconImage.color = new Color(1, 1, 1, 1);
+                    }
+                    else
+                    {
+                        iconImage.sprite = null;
+                        iconImage.color = new Color(1, 1, 1, 0);
+                    }
+                }
             }
-            else
+
+            Transform countTransform = hotbarSlots[i].transform.Find("CountText");
+            if (countTransform != null)
             {
-                iconImage.sprite = null;
-                iconImage.color = new Color(1, 1, 1, 0);
+                TextMeshProUGUI countText = countTransform.GetComponent<TextMeshProUGUI>();
+                if (countText != null)
+                {
+                    int count = inventoryManager.GetItemCount(i);
+                    if (count > 1)
+                    {
+                        countText.text = count.ToString();
+                        countText.gameObject.SetActive(true);
+                    }
+                    else
+                    {
+                        countText.gameObject.SetActive(false);
+                    }
+                }
             }
         }
     }

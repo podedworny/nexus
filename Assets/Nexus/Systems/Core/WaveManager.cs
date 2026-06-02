@@ -7,10 +7,10 @@ public class WaveManager : MonoBehaviour
     public static WaveManager Instance;
     public DayNightController dayNightController;
     public EnemySpawner enemySpawner;
-    
+
     public enum GameState { Day, TransitioningToNight, Night, TransitioningToDay }
     public GameState currentState = GameState.Day;
-    
+
     public int currentZombiesAlive = 0;
     public int currentWave = 1;
     public int maxWaves = 30;
@@ -21,6 +21,8 @@ public class WaveManager : MonoBehaviour
     private bool isDebugMenuOpen = false;
     private string debugWaveString = "1";
 
+    private PlayerStats _playerStats;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -29,6 +31,12 @@ public class WaveManager : MonoBehaviour
 
     private void Start()
     {
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            _playerStats = player.GetComponent<PlayerStats>();
+        }
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnPlayerDied += ResetWave;
@@ -90,7 +98,7 @@ public class WaveManager : MonoBehaviour
             isDebugMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            
+
             currentState = GameState.TransitioningToNight;
             StartCoroutine(TransitionToNightRoutine());
         }
@@ -107,9 +115,9 @@ public class WaveManager : MonoBehaviour
     public void ZombieDied()
     {
         currentZombiesAlive--;
-        if (GameManager.Instance != null)
+        if (_playerStats != null)
         {
-            GameManager.Instance.AddCurrency(10);
+            _playerStats.AddCurrency(10);
         }
 
         if (currentState == GameState.Night && currentZombiesAlive <= 0)
@@ -134,13 +142,13 @@ public class WaveManager : MonoBehaviour
     private void ResetWave()
     {
         StopAllCoroutines();
-        
+
         ZombieHealth[] allZombies = FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None);
         foreach (ZombieHealth zombie in allZombies)
         {
             Destroy(zombie.gameObject);
         }
-        
+
         currentZombiesAlive = 0;
         currentState = GameState.TransitioningToDay;
         StartCoroutine(dayNightController.RotateSun(false, false));

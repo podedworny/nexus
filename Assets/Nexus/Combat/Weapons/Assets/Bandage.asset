@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a255d848c9a5457e9dbb72584d16b932, type: 3}
+  m_Name: Bandage
+  m_EditorClassIdentifier: Assembly-CSharp::ConsumableData
+  itemName: Bandage
+  icon: {fileID: 21300000, guid: e6e4b0866b1677545ab3aedd9c95c54b, type: 3}
+  description: Essential field dressing for combat injuries. It won't work miracles,
+    but it's enough to stop the bleeding and keep you in the fight.
+  healAmount: 25
+  useTime: 3

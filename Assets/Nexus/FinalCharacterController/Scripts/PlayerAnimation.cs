@@ -23,7 +23,6 @@ namespace Nexus.FinalCharacterController
         private static int isRotatingToTargetHash = Animator.StringToHash("isRotatingToTarget");
         private static int rotationMismatchHash = Animator.StringToHash("rotationMismatch");
         private static int isAttackingHash = Animator.StringToHash("isAttacking");
-        private static int isGatheringHash = Animator.StringToHash("isGathering");
         private static int isPlayingActionHash = Animator.StringToHash("isPlayingAction");
         private int[] actionHashes;
 
@@ -40,7 +39,6 @@ namespace Nexus.FinalCharacterController
             _playerController = GetComponent<PlayerController>();
             _playerActionsInput = GetComponent<PlayerActionsInput>();
 
-            actionHashes = new int[] { isGatheringHash };
         }
 
         private void Update()
@@ -61,7 +59,7 @@ namespace Nexus.FinalCharacterController
             bool isRunBlendValue = isRunning || isJumping || isFalling;
 
             Vector2 inputTarget = isSprinting ? _playerLocomotionInput.MovementInput * _sprintMaxBlendValue :
-                                  isRunBlendValue ? _playerLocomotionInput.MovementInput * _runMaxBlendValue : 
+                                  isRunBlendValue ? _playerLocomotionInput.MovementInput * _runMaxBlendValue :
                                                     _playerLocomotionInput.MovementInput * _walkMaxBlendValue;
 
             _currentBlendInput = Vector3.Lerp(_currentBlendInput, inputTarget, locomotionBlendSpeed * Time.deltaTime);
@@ -72,7 +70,6 @@ namespace Nexus.FinalCharacterController
             _animator.SetBool(isJumpingHash, isJumping);
             _animator.SetBool(isRotatingToTargetHash, _playerController.IsRotatingToTarget);
             _animator.SetBool(isAttackingHash, _playerActionsInput.AttackPressed);
-            _animator.SetBool(isGatheringHash, _playerActionsInput.GatherPressed);
             _animator.SetBool(isPlayingActionHash, isPlayingAction);
 
             _animator.SetFloat(inputXHash, _currentBlendInput.x);

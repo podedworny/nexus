@@ -6,17 +6,17 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance;
 
     public int currentLives = 3;
-    public int currency = 0;
-    
+
     public float healthMultiplier = 1f;
     public float damageMultiplier = 1f;
-    
-    private int _savedCurrency = 0;
+
     private float _savedHealthMultiplier = 1f;
     private float _savedDamageMultiplier = 1f;
-    
+
     public Action OnGameOver;
     public Action OnPlayerDied;
+    public Action OnSaveCheckpoint;
+    public Action OnLoadCheckpoint;
 
     private void Awake()
     {
@@ -24,33 +24,18 @@ public class GameManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public void AddCurrency(int amount)
-    {
-        currency += amount;
-    }
-
-    public bool SpendCurrency(int amount)
-    {
-        if (currency >= amount)
-        {
-            currency -= amount;
-            return true;
-        }
-        return false;
-    }
-
     public void SaveCheckpoint()
     {
-        _savedCurrency = currency;
         _savedHealthMultiplier = healthMultiplier;
         _savedDamageMultiplier = damageMultiplier;
+        OnSaveCheckpoint?.Invoke();
     }
 
     public void LoadCheckpoint()
     {
-        currency = _savedCurrency;
         healthMultiplier = _savedHealthMultiplier;
         damageMultiplier = _savedDamageMultiplier;
+        OnLoadCheckpoint?.Invoke();
     }
 
     public void LoseLife()

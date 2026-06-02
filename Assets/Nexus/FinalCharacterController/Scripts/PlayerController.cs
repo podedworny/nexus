@@ -14,7 +14,7 @@ namespace Nexus.FinalCharacterController
         public bool IsRotatingToTarget { get; private set; } = false;
         public bool IsAiming { get; set; } = false;
         public bool IsFiring { get; set; } = false;
-        
+
         public bool IsAlignedForShooting => Quaternion.Angle(transform.rotation, Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f)) < 5f;
 
         [Header("Recoil")]
@@ -44,7 +44,7 @@ namespace Nexus.FinalCharacterController
         [Header("Animation")]
         public float playerModelRotationSpeed = 10f;
         public float rotateToTargetTime = 0.67f;
-        
+
         [Header("Aim Rotation Correction")]
         [SerializeField] private WeaponManager _weaponManager;
         public float akAimRotationOffset = 15f;
@@ -96,9 +96,9 @@ namespace Nexus.FinalCharacterController
             _lastMovementState = _playerState.CurrentPlayerMovementState;
 
             bool canRun = CanRun();
-            bool isMovementInput = _playerLocomotionInput.MovementInput != Vector2.zero;           
-            bool isMovingLaterally = IsMovingLaterally();                                            
-            bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally && _playerLocomotionInput.MovementInput.y > 0;        
+            bool isMovementInput = _playerLocomotionInput.MovementInput != Vector2.zero;
+            bool isMovingLaterally = IsMovingLaterally();
+            bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally && _playerLocomotionInput.MovementInput.y > 0;
             bool isGrounded = IsGrounded();
 
             PlayerMovementState lateralState = isSprinting ? PlayerMovementState.Sprinting :
@@ -202,7 +202,7 @@ namespace Nexus.FinalCharacterController
             _cameraRotation.x += lookSenseH * _playerLocomotionInput.LookInput.x;
             _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookSenseV * _playerLocomotionInput.LookInput.y, -lookLimitV, lookLimitV);
 
-            _playerTargetRotation.x += transform.eulerAngles.x + lookSenseH * _playerLocomotionInput.LookInput.x;
+            _playerTargetRotation.x += lookSenseH * _playerLocomotionInput.LookInput.x;
 
             float rotationTolerance = 90f;
             bool isIdling = _playerState.CurrentPlayerMovementState == PlayerMovementState.Idling;
@@ -217,12 +217,13 @@ namespace Nexus.FinalCharacterController
             if (IsAiming)
             {
                 transform.rotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
+                _playerTargetRotation.x = transform.eulerAngles.y - _currentAimOffset;
             }
             else if (isShootingIntent)
             {
                 Quaternion targetRotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, playerModelRotationSpeed * 1.5f * Time.deltaTime);
-                _playerTargetRotation.x = transform.eulerAngles.y;
+                _playerTargetRotation.x = transform.eulerAngles.y - _currentAimOffset;
             }
             else if (!isIdling)
             {
@@ -244,7 +245,7 @@ namespace Nexus.FinalCharacterController
             float sign = Mathf.Sign(Vector3.Dot(crossProduct, transform.up));
             RotationMismatch = sign * Vector3.Angle(transform.forward, camForwardProjectedXZ);
         }
-        
+
         private void UpdateIdleRotation(float rotationTolerance)
         {
             if (Mathf.Abs(RotationMismatch) > rotationTolerance)

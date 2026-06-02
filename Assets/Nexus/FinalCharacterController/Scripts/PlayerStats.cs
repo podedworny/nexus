@@ -7,13 +7,21 @@ public class PlayerStats : MonoBehaviour
     [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth;
-    
+
+    [Header("Armor")]
+    public float armorReduction = 0f;
+
+    [Header("Currency")]
+    public int currency = 0;
+    private int _savedCurrency = 0;
+    public Action<int> OnCurrencyChanged;
+
     [Header("Stamina")]
     public float maxStamina = 100f;
     public float currentStamina;
-    public float staminaDrainRate = 20f; 
-    public float staminaRegenRate = 15f; 
-    public float regenDelay = 1.5f;      
+    public float staminaDrainRate = 20f;
+    public float staminaRegenRate = 15f;
+    public float regenDelay = 1.5f;
 
     public Action<float, float> OnHealthChanged;
     public Action<float, float> OnStaminaChanged;
@@ -24,7 +32,7 @@ public class PlayerStats : MonoBehaviour
     private PlayerController _playerController;
     private WeaponManager _weaponManager;
     private bool _isDead = false;
-    
+
     private Vector3 _startPosition;
     private Quaternion _startRotation;
 
@@ -44,14 +52,17 @@ public class PlayerStats : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnPlayerDied += RespawnPlayer;
+            GameManager.Instance.OnSaveCheckpoint += SaveCurrency;
+            GameManager.Instance.OnLoadCheckpoint += LoadCurrency;
         }
-        
+
         UpdateMaxHealth();
-        currentHealth = maxHealth * (GameManager.Instance != null ? GameManager.Instance.healthMultiplier : 1f);
+        currentHealth = GetActualMaxHealth();
         currentStamina = maxStamina;
-        
-        OnHealthChanged?.Invoke(currentHealth, maxHealth * (GameManager.Instance != null ? GameManager.Instance.healthMultiplier : 1f));
+
+        OnHealthChanged?.Invoke(currentHealth, GetActualMaxHealth());
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
+        OnCurrencyChanged?.Invoke(currency);
     }
 
     private void OnDestroy()
@@ -59,6 +70,8 @@ public class PlayerStats : MonoBehaviour
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnPlayerDied -= RespawnPlayer;
+            GameManager.Instance.OnSaveCheckpoint -= SaveCurrency;
+            GameManager.Instance.OnLoadCheckpoint -= LoadCurrency;
         }
     }
 
@@ -105,37 +118,74 @@ public class PlayerStats : MonoBehaviour
                     {
                         currentStamina = maxStamina;
                     }
-                    
+
                     OnStaminaChanged?.Invoke(currentStamina, maxStamina);
                 }
             }
         }
     }
 
-    public void UpdateMaxHealth()
+    public void AddCurrency(int amount)
+    {
+        currency += amount;
+        OnCurrencyChanged?.Invoke(currency);
+    }
+
+    public bool SpendCurrency(int amount)
+    {
+        if (currency >= amount)
+        {
+            currency -= amount;
+            OnCurrencyChanged?.Invoke(currency);
+            return true;
+        }
+        return false;
+    }
+
+    private void SaveCurrency()
+    {
+        _savedCurrency = currency;
+    }
+
+    private void LoadCurrency()
+    {
+        currency = _savedCurrency;
+        OnCurrencyChanged?.Invoke(currency);
+    }
+
+    public float GetActualMaxHealth()
     {
         float mult = GameManager.Instance != null ? GameManager.Instance.healthMultiplier : 1f;
-        float actualMax = maxHealth * mult;
+        return maxHealth * mult;
+    }
+
+    public void UpdateMaxHealth()
+    {
+        float actualMax = GetActualMaxHealth();
         OnHealthChanged?.Invoke(currentHealth, actualMax);
     }
 
     public void Heal(float amount)
     {
-        float mult = GameManager.Instance != null ? GameManager.Instance.healthMultiplier : 1f;
-        float actualMax = maxHealth * mult;
+        float actualMax = GetActualMaxHealth();
         currentHealth = Mathf.Min(currentHealth + amount, actualMax);
         OnHealthChanged?.Invoke(currentHealth, actualMax);
+    }
+
+    public void AddArmor(float amount)
+    {
+        armorReduction += amount;
+        armorReduction = Mathf.Clamp(armorReduction, 0f, 0.8f);
     }
 
     public void TakeDamage(float amount)
     {
         if (_isDead) return;
 
-        currentHealth -= amount;
-        
-        float mult = GameManager.Instance != null ? GameManager.Instance.healthMultiplier : 1f;
-        float actualMax = maxHealth * mult;
-        
+        float reducedDamage = amount * (1f - armorReduction);
+        currentHealth -= reducedDamage;
+
+        float actualMax = GetActualMaxHealth();
         currentHealth = Mathf.Clamp(currentHealth, 0, actualMax);
         OnHealthChanged?.Invoke(currentHealth, actualMax);
 
@@ -168,29 +218,28 @@ public class PlayerStats : MonoBehaviour
         _isDead = true;
         if (_playerController != null) _playerController.enabled = false;
         if (_weaponManager != null) _weaponManager.enabled = false;
-        
+
         if (GameManager.Instance != null) GameManager.Instance.LoseLife();
     }
 
     private void RespawnPlayer()
     {
         _isDead = false;
-        
+
         CharacterController cc = GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
-        
+
         transform.position = _startPosition;
         transform.rotation = _startRotation;
-        
+
         if (cc != null) cc.enabled = true;
 
         if (_playerController != null) _playerController.enabled = true;
         if (_weaponManager != null) _weaponManager.enabled = true;
 
-        float mult = GameManager.Instance != null ? GameManager.Instance.healthMultiplier : 1f;
-        currentHealth = maxHealth * mult;
+        currentHealth = GetActualMaxHealth();
         UpdateMaxHealth();
-        
+
         currentStamina = maxStamina;
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
     }
@@ -203,7 +252,7 @@ public class PlayerStats : MonoBehaviour
             style.fontSize = 100;
             style.normal.textColor = Color.red;
             style.alignment = TextAnchor.MiddleCenter;
-            
+
             string msg = (GameManager.Instance != null && GameManager.Instance.currentLives <= 0) ? "GAME OVER" : "YOU DIED";
             GUI.Label(new Rect(0, 0, Screen.width, Screen.height), msg, style);
         }

@@ -284,15 +284,6 @@ namespace Nexus.FinalCharacterController
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Gather"",
-                    ""type"": ""Button"",
-                    ""id"": ""dbaed346-5b6d-46cf-bd09-dd4ccca530fc"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
                     ""name"": ""Interact"",
                     ""type"": ""Button"",
                     ""id"": ""41474934-16fd-4b14-98b3-917431345942"",
@@ -325,17 +316,6 @@ namespace Nexus.FinalCharacterController
                 },
                 {
                     ""name"": """",
-                    ""id"": ""11dbce4c-d7a6-4bcc-b66c-2fbd922ad855"",
-                    ""path"": ""<Keyboard>/e"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Gather"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
                     ""id"": ""cc64fcac-fd6f-4ae8-910a-280c7a927467"",
                     ""path"": ""<Keyboard>/f"",
                     ""interactions"": """",
@@ -348,7 +328,7 @@ namespace Nexus.FinalCharacterController
                 {
                     ""name"": """",
                     ""id"": ""a0ee7180-64fe-46b8-ac7b-99cb415e45fd"",
-                    ""path"": ""<Keyboard>/t"",
+                    ""path"": ""<Keyboard>/q"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -544,7 +524,7 @@ namespace Nexus.FinalCharacterController
                 {
                     ""name"": """",
                     ""id"": ""a8e688d4-9515-441a-abc6-0248043e0a55"",
-                    ""path"": ""<Keyboard>/i"",
+                    ""path"": ""<Keyboard>/e"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -570,7 +550,6 @@ namespace Nexus.FinalCharacterController
             // PlayerActionMap
             m_PlayerActionMap = asset.FindActionMap("PlayerActionMap", throwIfNotFound: true);
             m_PlayerActionMap_Attack = m_PlayerActionMap.FindAction("Attack", throwIfNotFound: true);
-            m_PlayerActionMap_Gather = m_PlayerActionMap.FindAction("Gather", throwIfNotFound: true);
             m_PlayerActionMap_Interact = m_PlayerActionMap.FindAction("Interact", throwIfNotFound: true);
             m_PlayerActionMap_OpenShop = m_PlayerActionMap.FindAction("OpenShop", throwIfNotFound: true);
             // CombatMap
@@ -907,7 +886,6 @@ namespace Nexus.FinalCharacterController
         private readonly InputActionMap m_PlayerActionMap;
         private List<IPlayerActionMapActions> m_PlayerActionMapActionsCallbackInterfaces = new List<IPlayerActionMapActions>();
         private readonly InputAction m_PlayerActionMap_Attack;
-        private readonly InputAction m_PlayerActionMap_Gather;
         private readonly InputAction m_PlayerActionMap_Interact;
         private readonly InputAction m_PlayerActionMap_OpenShop;
         /// <summary>
@@ -925,10 +903,6 @@ namespace Nexus.FinalCharacterController
             /// Provides access to the underlying input action "PlayerActionMap/Attack".
             /// </summary>
             public InputAction @Attack => m_Wrapper.m_PlayerActionMap_Attack;
-            /// <summary>
-            /// Provides access to the underlying input action "PlayerActionMap/Gather".
-            /// </summary>
-            public InputAction @Gather => m_Wrapper.m_PlayerActionMap_Gather;
             /// <summary>
             /// Provides access to the underlying input action "PlayerActionMap/Interact".
             /// </summary>
@@ -966,9 +940,6 @@ namespace Nexus.FinalCharacterController
                 @Attack.started += instance.OnAttack;
                 @Attack.performed += instance.OnAttack;
                 @Attack.canceled += instance.OnAttack;
-                @Gather.started += instance.OnGather;
-                @Gather.performed += instance.OnGather;
-                @Gather.canceled += instance.OnGather;
                 @Interact.started += instance.OnInteract;
                 @Interact.performed += instance.OnInteract;
                 @Interact.canceled += instance.OnInteract;
@@ -989,9 +960,6 @@ namespace Nexus.FinalCharacterController
                 @Attack.started -= instance.OnAttack;
                 @Attack.performed -= instance.OnAttack;
                 @Attack.canceled -= instance.OnAttack;
-                @Gather.started -= instance.OnGather;
-                @Gather.performed -= instance.OnGather;
-                @Gather.canceled -= instance.OnGather;
                 @Interact.started -= instance.OnInteract;
                 @Interact.performed -= instance.OnInteract;
                 @Interact.canceled -= instance.OnInteract;
@@ -1372,13 +1340,6 @@ namespace Nexus.FinalCharacterController
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnAttack(InputAction.CallbackContext context);
-            /// <summary>
-            /// Method invoked when associated input action "Gather" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-            /// </summary>
-            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-            void OnGather(InputAction.CallbackContext context);
             /// <summary>
             /// Method invoked when associated input action "Interact" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
             /// </summary>

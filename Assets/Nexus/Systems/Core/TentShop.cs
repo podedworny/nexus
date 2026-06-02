@@ -4,13 +4,40 @@ using UnityEngine.InputSystem;
 public class TentShop : MonoBehaviour
 {
     public float interactRange = 4f;
+
+    [SerializeField] private GameObject shopUIContainer;
+
+    [SerializeField] private GameObject bodyChestMesh;
+    [SerializeField] private GameObject bodyLegsMesh;
+    [SerializeField] private GameObject plateChestMesh;
+    [SerializeField] private GameObject platePantsMesh;
+
+    public ConsumableData bandageItem;
+    public ItemData pistolItem;
+    public ItemData akItem;
+
     private Transform _playerTransform;
+    private InventoryManager _inventoryManager;
+    private PlayerStats _playerStats;
     private bool _isShopOpen = false;
+
+    private bool _hasChestArmor = false;
+    private bool _hasPantsArmor = false;
+
+    public bool HasChestArmor => _hasChestArmor;
+    public bool HasPantsArmor => _hasPantsArmor;
 
     private void Start()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null) _playerTransform = player.transform;
+        if (player != null)
+        {
+            _playerTransform = player.transform;
+            _inventoryManager = player.GetComponent<InventoryManager>();
+            _playerStats = player.GetComponent<PlayerStats>();
+        }
+
+        if (shopUIContainer != null) shopUIContainer.SetActive(false);
     }
 
     private void OnEnable()
@@ -70,39 +97,47 @@ public class TentShop : MonoBehaviour
         }
     }
 
-    private void ToggleShop()
+    public void ToggleShop()
     {
         _isShopOpen = !_isShopOpen;
+
+        if (shopUIContainer != null)
+        {
+            shopUIContainer.SetActive(_isShopOpen);
+        }
+
         if (_isShopOpen)
         {
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
-            
-            if (Nexus.FinalCharacterController.PlayerInputManager.Instance != null) 
+
+            if (Nexus.FinalCharacterController.PlayerInputManager.Instance != null)
             {
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.CombatMap.Disable();
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.PlayerLocomotionMap.Disable();
-                Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.PlayerActionMap.Disable();
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.ThirdPersonMap.Disable();
+                Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.InventoryMap.Disable();
             }
         }
         else
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            
-            if (Nexus.FinalCharacterController.PlayerInputManager.Instance != null) 
+
+            if (Nexus.FinalCharacterController.PlayerInputManager.Instance != null)
             {
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.CombatMap.Enable();
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.PlayerLocomotionMap.Enable();
-                Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.PlayerActionMap.Enable();
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.ThirdPersonMap.Enable();
+                Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.InventoryMap.Enable();
             }
         }
     }
 
     private void OnGUI()
     {
+        if (Cursor.visible) return;
+
         if (_playerTransform == null || WaveManager.Instance == null) return;
 
         float dist = Vector3.Distance(transform.position, _playerTransform.position);
@@ -116,87 +151,155 @@ public class TentShop : MonoBehaviour
             promptStyle.normal.textColor = Color.white;
             GUI.Label(new Rect(0, Screen.height / 2 + 50, Screen.width, 50), "Press [F] to Start Night | Press [T] for Shop", promptStyle);
         }
+    }
 
-        if (_isShopOpen)
+    public bool CanReceiveWeapon()
+    {
+        return _inventoryManager != null && _inventoryManager.HasFreeSlot();
+    }
+
+    public bool CanReceiveBandage()
+    {
+        return _inventoryManager != null && _inventoryManager.CanAddStackableItem(bandageItem, 10);
+    }
+
+    public void BuyOrUpgradePistol()
+    {
+        if (_playerStats == null || _playerTransform == null) return;
+        WeaponManager wm = _playerTransform.GetComponent<WeaponManager>();
+        if (wm == null || _inventoryManager == null) return;
+
+        int slotIndex = _inventoryManager.GetItemIndex(pistolItem);
+        int level = slotIndex != -1 ? wm.GetWeaponLevel(slotIndex) : 0;
+        int cost = level == 0 ? 200 : 150;
+
+        if (level == 0 && !CanReceiveWeapon()) return;
+
+        if (level < 3 && _playerStats.currency >= cost)
         {
-            DrawShopUI();
+            if (level == 0 && pistolItem != null)
+            {
+                slotIndex = _inventoryManager.AddItem(pistolItem);
+            }
+
+            if (slotIndex != -1)
+            {
+                _playerStats.SpendCurrency(cost);
+                wm.UpgradeWeapon(slotIndex);
+            }
         }
     }
 
-    private void DrawShopUI()
+    public void BuyOrUpgradeAK()
     {
-        int w = 450;
-        int h = 350;
-        Rect windowRect = new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h);
-        
-        GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
-        GUI.color = new Color(0.1f, 0.1f, 0.1f, 0.95f);
-        GUI.Box(windowRect, "", boxStyle);
-        GUI.color = Color.white;
+        if (_playerStats == null || _playerTransform == null) return;
+        WeaponManager wm = _playerTransform.GetComponent<WeaponManager>();
+        if (wm == null || _inventoryManager == null) return;
 
-        GUILayout.BeginArea(windowRect);
-        
-        GUIStyle titleStyle = new GUIStyle(GUI.skin.label);
-        titleStyle.fontSize = 26;
-        titleStyle.fontStyle = FontStyle.Bold;
-        titleStyle.alignment = TextAnchor.MiddleCenter;
-        titleStyle.normal.textColor = Color.white;
-        GUILayout.Label("CAMP UPGRADES", titleStyle);
-        GUILayout.Space(10);
-        
-        int points = GameManager.Instance != null ? GameManager.Instance.currency : 0;
-        GUIStyle pointsStyle = new GUIStyle(GUI.skin.label);
-        pointsStyle.fontSize = 18;
-        pointsStyle.normal.textColor = Color.yellow;
-        pointsStyle.alignment = TextAnchor.MiddleCenter;
-        GUILayout.Label("Balance: $" + points, pointsStyle);
-        GUILayout.Space(20);
+        int slotIndex = _inventoryManager.GetItemIndex(akItem);
+        int level = slotIndex != -1 ? wm.GetWeaponLevel(slotIndex) : 0;
+        int cost = level == 0 ? 500 : 250;
 
-        if (GUILayout.Button("Full Heal ($100)", GUILayout.Height(45)))
+        if (level == 0 && !CanReceiveWeapon()) return;
+
+        if (level < 3 && _playerStats.currency >= cost)
         {
-            if (GameManager.Instance != null && GameManager.Instance.SpendCurrency(100))
+            if (level == 0 && akItem != null)
             {
-                PlayerStats stats = _playerTransform.GetComponent<PlayerStats>();
-                if (stats != null) stats.Heal(9999f);
+                slotIndex = _inventoryManager.AddItem(akItem);
+            }
+
+            if (slotIndex != -1)
+            {
+                _playerStats.SpendCurrency(cost);
+                wm.UpgradeWeapon(slotIndex);
             }
         }
+    }
 
-        if (GUILayout.Button("Max Health +25% ($200)", GUILayout.Height(45)))
+    public void BuyChestArmor()
+    {
+        if (_playerStats == null) return;
+
+        if (!_hasChestArmor && _playerStats.SpendCurrency(300))
         {
-            if (GameManager.Instance != null && GameManager.Instance.SpendCurrency(200))
+            _hasChestArmor = true;
+
+            if (bodyChestMesh != null) bodyChestMesh.SetActive(false);
+            if (plateChestMesh != null) plateChestMesh.SetActive(true);
+
+            _playerStats.AddArmor(0.2f);
+        }
+    }
+
+    public void BuyPantsArmor()
+    {
+        if (_playerStats == null) return;
+
+        if (!_hasPantsArmor && _playerStats.SpendCurrency(250))
+        {
+            _hasPantsArmor = true;
+
+            if (bodyLegsMesh != null) bodyLegsMesh.SetActive(false);
+            if (platePantsMesh != null) platePantsMesh.SetActive(true);
+
+            _playerStats.AddArmor(0.15f);
+        }
+    }
+
+    public void BuyBandage()
+    {
+        if (_playerStats == null || _inventoryManager == null || bandageItem == null) return;
+
+        if (!CanReceiveBandage()) return;
+
+        if (_playerStats.currency >= 75)
+        {
+            if (_inventoryManager.TryAddStackableItem(bandageItem, 10))
             {
-                GameManager.Instance.healthMultiplier += 0.25f;
-                PlayerStats stats = _playerTransform.GetComponent<PlayerStats>();
-                if (stats != null) stats.UpdateMaxHealth();
+                _playerStats.SpendCurrency(75);
             }
         }
+    }
 
-        if (GUILayout.Button("Global Damage +15% ($300)", GUILayout.Height(45)))
+    public void BuyFullHeal()
+    {
+        if (_playerStats == null) return;
+        if (_playerStats.currentHealth >= _playerStats.GetActualMaxHealth()) return;
+
+        if (_playerStats.SpendCurrency(150))
         {
-            if (GameManager.Instance != null && GameManager.Instance.SpendCurrency(300))
+            _playerStats.Heal(9999f);
+        }
+    }
+
+    public void BuyPistolAmmo()
+    {
+        if (_playerStats == null || _playerTransform == null) return;
+        WeaponManager wm = _playerTransform.GetComponent<WeaponManager>();
+
+        int slotIndex = _inventoryManager.GetItemIndex(pistolItem);
+        if (slotIndex != -1 && wm.GetWeaponLevel(slotIndex) > 0 && wm.CanBuyAmmo(slotIndex))
+        {
+            if (_playerStats.SpendCurrency(50))
             {
-                GameManager.Instance.damageMultiplier += 0.15f;
+                wm.BuyAmmo(slotIndex, 30);
             }
         }
+    }
 
-        if (GUILayout.Button("Restock Ammo ($50)", GUILayout.Height(45)))
+    public void BuyAKAmmo()
+    {
+        if (_playerStats == null || _playerTransform == null) return;
+        WeaponManager wm = _playerTransform.GetComponent<WeaponManager>();
+
+        int slotIndex = _inventoryManager.GetItemIndex(akItem);
+        if (slotIndex != -1 && wm.GetWeaponLevel(slotIndex) > 0 && wm.CanBuyAmmo(slotIndex))
         {
-            WeaponManager wm = _playerTransform.GetComponent<WeaponManager>();
-            if (wm != null && wm.CurrentWeaponIndex > 0)
+            if (_playerStats.SpendCurrency(120))
             {
-                if (GameManager.Instance != null && GameManager.Instance.SpendCurrency(50))
-                {
-                    wm.BuyAmmo();
-                }
+                wm.BuyAmmo(slotIndex, 90);
             }
         }
-        
-        GUILayout.FlexibleSpace();
-        if (GUILayout.Button("EXIT SHOP", GUILayout.Height(35)))
-        {
-            ToggleShop();
-        }
-
-        GUILayout.EndArea();
     }
 }

@@ -7,7 +7,6 @@ namespace Nexus.FinalCharacterController
     public class PlayerActionsInput : MonoBehaviour, PlayerControls.IPlayerActionMapActions
     {
         public bool AttackPressed { get; private set; }
-        public bool GatherPressed { get; private set; }
         public bool InteractPressed { get; private set; }
 
         private PlayerLocomotionInput _playerLocomotionInput;
@@ -17,7 +16,7 @@ namespace Nexus.FinalCharacterController
         {
             _playerLocomotionInput = GetComponent<PlayerLocomotionInput>();
         }
-        
+
         private void OnEnable()
         {
             if (PlayerInputManager.Instance?.PlayerControls == null)
@@ -44,7 +43,6 @@ namespace Nexus.FinalCharacterController
         {
             if (_playerLocomotionInput.MovementInput != Vector2.zero)
             {
-                GatherPressed = false;
                 InteractPressed = false;
             }
 
@@ -78,11 +76,6 @@ namespace Nexus.FinalCharacterController
             }
         }
 
-        public void SetGatherPressedFalse()
-        {
-            GatherPressed = false;
-        }
-
         public void SetAttackPressedFalse()
         {
             AttackPressed = false;
@@ -101,13 +94,6 @@ namespace Nexus.FinalCharacterController
             AttackPressed = true;
         }
 
-        public void OnGather(InputAction.CallbackContext context)
-        {
-            if (!context.performed)
-                return;
-
-            GatherPressed = true;
-        }
 
         public void OnInteract(InputAction.CallbackContext context)
         {
@@ -115,7 +101,7 @@ namespace Nexus.FinalCharacterController
                 return;
 
             InteractPressed = true;
-            
+
             if (_currentHoveredButton != null)
             {
                 _currentHoveredButton.PressButton();

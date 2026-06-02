@@ -145,13 +145,29 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
         if (item != null)
         {
             if (_itemNameText != null) _itemNameText.text = item.itemName.ToUpper();
-            if (_itemDescriptionText != null) _itemDescriptionText.text = item.description;
-            
-            if (_itemTypeText != null) 
+
+            if (_itemTypeText != null)
             {
-                if (item is WeaponData) _itemTypeText.text = "WEAPON";
-                else if (item is MeleeWeaponData) _itemTypeText.text = "MELEE";
-                else _itemTypeText.text = "CONSUMABLE";
+                if (item is WeaponData)
+                {
+                    int level = _weaponManager != null ? _weaponManager.GetWeaponLevel(slotIndex) : 0;
+                    _itemTypeText.text = level > 0 ? $"WEAPON (LVL {level})" : "WEAPON";
+
+                    if (_itemDescriptionText != null)
+                    {
+                        _itemDescriptionText.text = item.description;
+                    }
+                }
+                else if (item is MeleeWeaponData)
+                {
+                    _itemTypeText.text = "MELEE";
+                    if (_itemDescriptionText != null) _itemDescriptionText.text = item.description;
+                }
+                else
+                {
+                    _itemTypeText.text = "CONSUMABLE";
+                    if (_itemDescriptionText != null) _itemDescriptionText.text = item.description;
+                }
             }
 
             if (_statRowPrefab != null && _statsContainer != null)
@@ -162,6 +178,34 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
                     GameObject rowObj = Instantiate(_statRowPrefab, _statsContainer);
                     StatRowUI rowUI = rowObj.GetComponent<StatRowUI>();
                     if (rowUI != null) rowUI.Setup(stats[i]);
+
+                    if (item is WeaponData)
+                    {
+                        string sName = stats[i].statName.ToLower();
+                        if (sName.Contains("damage") || sName.Contains("obra"))
+                        {
+                            int level = _weaponManager != null ? _weaponManager.GetWeaponLevel(slotIndex) : 0;
+                            if (level > 1)
+                            {
+                                string cleanVal = stats[i].statValue.Replace(",", ".");
+                                if (float.TryParse(cleanVal, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out float dmg))
+                                {
+                                    float bonus = (level - 1) * 0.3f;
+                                    dmg *= (1f + bonus);
+                                    string newText = dmg.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+
+                                    TextMeshProUGUI[] texts = rowObj.GetComponentsInChildren<TextMeshProUGUI>();
+                                    foreach (var txt in texts)
+                                    {
+                                        if (txt.text.Contains(stats[i].statValue))
+                                        {
+                                            txt.text = txt.text.Replace(stats[i].statValue, newText);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     if (i < stats.Count - 1)
                     {
@@ -205,24 +249,45 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
         for (int i = 0; i < _inventorySlots.Length; i++)
         {
             if (_inventorySlots[i] == null || _inventorySlots[i].transform.childCount == 0) continue;
-            
+
             Transform iconTransform = _inventorySlots[i].transform.Find("Icon");
-            if (iconTransform == null) continue;
-
-            Image iconImage = iconTransform.GetComponent<Image>();
-            if (iconImage == null) continue;
-
-            ItemData item = _inventoryManager.GetItem(i);
-
-            if (item != null && item.icon != null)
+            if (iconTransform != null)
             {
-                iconImage.sprite = item.icon;
-                iconImage.color = new Color(1, 1, 1, 1);
+                Image iconImage = iconTransform.GetComponent<Image>();
+                if (iconImage != null)
+                {
+                    ItemData item = _inventoryManager.GetItem(i);
+
+                    if (item != null && item.icon != null)
+                    {
+                        iconImage.sprite = item.icon;
+                        iconImage.color = new Color(1, 1, 1, 1);
+                    }
+                    else
+                    {
+                        iconImage.sprite = null;
+                        iconImage.color = new Color(1, 1, 1, 0);
+                    }
+                }
             }
-            else
+
+            Transform countTransform = _inventorySlots[i].transform.Find("CountText");
+            if (countTransform != null)
             {
-                iconImage.sprite = null;
-                iconImage.color = new Color(1, 1, 1, 0);
+                TextMeshProUGUI countText = countTransform.GetComponent<TextMeshProUGUI>();
+                if (countText != null)
+                {
+                    int count = _inventoryManager.GetItemCount(i);
+                    if (count > 1)
+                    {
+                        countText.text = count.ToString();
+                        countText.gameObject.SetActive(true);
+                    }
+                    else
+                    {
+                        countText.gameObject.SetActive(false);
+                    }
+                }
             }
         }
     }
