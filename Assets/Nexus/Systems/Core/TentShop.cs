@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class TentShop : MonoBehaviour
@@ -126,8 +127,7 @@ public class TentShop : MonoBehaviour
         }
         else
         {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            StartCoroutine(LockCursorRoutine());
 
             if (Nexus.FinalCharacterController.PlayerInputManager.Instance != null)
             {
@@ -137,6 +137,13 @@ public class TentShop : MonoBehaviour
                 Nexus.FinalCharacterController.PlayerInputManager.Instance.PlayerControls.InventoryMap.Enable();
             }
         }
+    }
+
+    private IEnumerator LockCursorRoutine()
+    {
+        yield return new WaitForEndOfFrame();
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void OnGUI()
@@ -176,7 +183,7 @@ public class TentShop : MonoBehaviour
 
         int slotIndex = _inventoryManager.GetItemIndex(pistolItem);
         int level = slotIndex != -1 ? wm.GetWeaponLevel(slotIndex) : 0;
-        int cost = level == 0 ? 200 : 150;
+        int cost = level == 0 ? 250 : 150;
 
         if (level == 0 && !CanReceiveWeapon()) return;
 
@@ -203,7 +210,7 @@ public class TentShop : MonoBehaviour
 
         int slotIndex = _inventoryManager.GetItemIndex(akItem);
         int level = slotIndex != -1 ? wm.GetWeaponLevel(slotIndex) : 0;
-        int cost = level == 0 ? 500 : 250;
+        int cost = level == 0 ? 800 : 400;
 
         if (level == 0 && !CanReceiveWeapon()) return;
 
@@ -226,14 +233,14 @@ public class TentShop : MonoBehaviour
     {
         if (_playerStats == null) return;
 
-        if (!_hasChestArmor && _playerStats.SpendCurrency(300))
+        if (!_hasChestArmor && _playerStats.SpendCurrency(400))
         {
             _hasChestArmor = true;
 
             if (bodyChestMesh != null) bodyChestMesh.SetActive(false);
             if (plateChestMesh != null) plateChestMesh.SetActive(true);
 
-            _playerStats.AddArmor(0.2f);
+            _playerStats.AddArmor(0.25f);
         }
     }
 
@@ -258,11 +265,11 @@ public class TentShop : MonoBehaviour
 
         if (!CanReceiveBandage()) return;
 
-        if (_playerStats.currency >= 75)
+        if (_playerStats.currency >= 50)
         {
             if (_inventoryManager.TryAddStackableItem(bandageItem, 10))
             {
-                _playerStats.SpendCurrency(75);
+                _playerStats.SpendCurrency(50);
             }
         }
     }
@@ -272,7 +279,7 @@ public class TentShop : MonoBehaviour
         if (_playerStats == null) return;
         if (_playerStats.currentHealth >= _playerStats.GetActualMaxHealth()) return;
 
-        if (_playerStats.SpendCurrency(150))
+        if (_playerStats.SpendCurrency(200))
         {
             _playerStats.Heal(9999f);
         }
@@ -286,7 +293,7 @@ public class TentShop : MonoBehaviour
         int slotIndex = _inventoryManager.GetItemIndex(pistolItem);
         if (slotIndex != -1 && wm.GetWeaponLevel(slotIndex) > 0 && wm.CanBuyAmmo(slotIndex))
         {
-            if (_playerStats.SpendCurrency(50))
+            if (_playerStats.SpendCurrency(60))
             {
                 wm.BuyAmmo(slotIndex, 30);
             }
@@ -301,7 +308,7 @@ public class TentShop : MonoBehaviour
         int slotIndex = _inventoryManager.GetItemIndex(akItem);
         if (slotIndex != -1 && wm.GetWeaponLevel(slotIndex) > 0 && wm.CanBuyAmmo(slotIndex))
         {
-            if (_playerStats.SpendCurrency(120))
+            if (_playerStats.SpendCurrency(150))
             {
                 wm.BuyAmmo(slotIndex, 90);
             }

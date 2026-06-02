@@ -20,7 +20,7 @@ MonoBehaviour:
   spawnPosition: {x: 0.0128, y: -0.2054, z: -0.0076}
   spawnRotation: {x: 7.268, y: 0, z: 0}
   spawnScale: {x: 0.08, y: 0.06, z: 0.08}
-  damage: 35
+  damage: 25
   attackRate: 1
   attackRange: 2.5
   hitRadius: 1

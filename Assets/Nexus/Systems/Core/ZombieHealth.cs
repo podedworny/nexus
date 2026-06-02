@@ -10,7 +10,8 @@ public class ZombieHealth : MonoBehaviour
 
     private float currentHealth;
     private bool isDead = false;
-    
+    private int _moneyReward = 15;
+
     private Animator _animator;
     private NavMeshAgent _agent;
     private ZombieAI _zombieAI;
@@ -22,10 +23,11 @@ public class ZombieHealth : MonoBehaviour
         _zombieAI = GetComponent<ZombieAI>();
     }
 
-    public void Initialize(float healthAmount)
+    public void Initialize(float healthAmount, int moneyReward)
     {
         maxHealth = healthAmount;
         currentHealth = maxHealth;
+        _moneyReward = moneyReward;
     }
 
     public void TakeDamage(float amount)
@@ -33,7 +35,7 @@ public class ZombieHealth : MonoBehaviour
         if (isDead) return;
 
         currentHealth -= amount;
-        
+
         if (currentHealth <= 0)
         {
             Die();
@@ -52,9 +54,9 @@ public class ZombieHealth : MonoBehaviour
     {
         if (_agent != null) _agent.isStopped = true;
         if (_zombieAI != null) _zombieAI.enabled = false;
-        
+
         yield return new WaitForSeconds(hitPauseDuration);
-        
+
         if (!isDead)
         {
             if (_agent != null) _agent.isStopped = false;
@@ -65,12 +67,12 @@ public class ZombieHealth : MonoBehaviour
     private void Die()
     {
         isDead = true;
-        
+
         if (_animator != null)
         {
             _animator.SetTrigger("Death");
         }
-        
+
         if (_agent != null)
         {
             _agent.isStopped = true;
@@ -90,9 +92,9 @@ public class ZombieHealth : MonoBehaviour
 
         if (WaveManager.Instance != null)
         {
-            WaveManager.Instance.ZombieDied();
+            WaveManager.Instance.ZombieDied(_moneyReward);
         }
-        
+
         Destroy(gameObject, deathDestroyDelay);
     }
 }

@@ -346,6 +346,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         if (!(currentItem is WeaponData weaponData) || _ammoInSlots[_currentIndex] == weaponData.magazineSize || _reserveAmmo[_currentIndex] <= 0) return;
 
         _isReloading = true;
+        _pendingShot = false;
+        _isShooting = false;
         _reloadTimer = weaponData.reloadTime;
         if (_animator != null) _animator.SetTrigger("Reload");
         _animator.SetBool("isReloading", true);
@@ -479,6 +481,8 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
         if (context.started)
         {
+            if (_isReloading) return;
+
             _isShooting = true;
             _hasFiredThisClick = false;
             _pendingShot = true;

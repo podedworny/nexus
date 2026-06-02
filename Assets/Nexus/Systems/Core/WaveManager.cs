@@ -15,12 +15,6 @@ public class WaveManager : MonoBehaviour
     public int currentWave = 1;
     public int maxWaves = 30;
 
-    public bool showDebugUI = true;
-    public InputAction toggleDebugUIAction;
-    public InputAction killAllZombiesAction;
-    private bool isDebugMenuOpen = false;
-    private string debugWaveString = "1";
-
     private PlayerStats _playerStats;
 
     private void Awake()
@@ -44,18 +38,6 @@ public class WaveManager : MonoBehaviour
         }
     }
 
-    private void OnEnable()
-    {
-        toggleDebugUIAction.Enable();
-        killAllZombiesAction.Enable();
-    }
-
-    private void OnDisable()
-    {
-        toggleDebugUIAction.Disable();
-        killAllZombiesAction.Disable();
-    }
-
     private void OnDestroy()
     {
         if (GameManager.Instance != null)
@@ -64,38 +46,10 @@ public class WaveManager : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (toggleDebugUIAction.WasPressedThisFrame() && showDebugUI && currentState == GameState.Day)
-        {
-            isDebugMenuOpen = !isDebugMenuOpen;
-            if (isDebugMenuOpen)
-            {
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
-            }
-            else
-            {
-                Cursor.lockState = CursorLockMode.Locked;
-                Cursor.visible = false;
-            }
-        }
-
-        if (killAllZombiesAction.WasPressedThisFrame() && showDebugUI && currentState == GameState.Night)
-        {
-            ZombieHealth[] allZombies = FindObjectsByType<ZombieHealth>(FindObjectsSortMode.None);
-            foreach (ZombieHealth zombie in allZombies)
-            {
-                zombie.TakeDamage(999999f);
-            }
-        }
-    }
-
     public void StartWaveTransition()
     {
         if (currentState == GameState.Day && currentWave <= maxWaves)
         {
-            isDebugMenuOpen = false;
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
@@ -112,12 +66,12 @@ public class WaveManager : MonoBehaviour
         enemySpawner.SpawnZombies(currentWave);
     }
 
-    public void ZombieDied()
+    public void ZombieDied(int reward)
     {
         currentZombiesAlive--;
         if (_playerStats != null)
         {
-            _playerStats.AddCurrency(10);
+            _playerStats.AddCurrency(reward);
         }
 
         if (currentState == GameState.Night && currentZombiesAlive <= 0)
@@ -153,32 +107,5 @@ public class WaveManager : MonoBehaviour
         currentState = GameState.TransitioningToDay;
         StartCoroutine(dayNightController.RotateSun(false, false));
         currentState = GameState.Day;
-    }
-
-    private void OnGUI()
-    {
-        if (!showDebugUI || !isDebugMenuOpen || currentState != GameState.Day) return;
-
-        GUIStyle debugBoxStyle = new GUIStyle(GUI.skin.box)
-        {
-            fontSize = 14
-        };
-
-        GUILayout.BeginArea(new Rect(10, 10, 150, 80), debugBoxStyle);
-        GUILayout.Label("Debug Wave:");
-        debugWaveString = GUILayout.TextField(debugWaveString);
-
-        if (GUILayout.Button("Set Wave"))
-        {
-            if (int.TryParse(debugWaveString, out int parsedWave))
-            {
-                currentWave = Mathf.Clamp(parsedWave, 1, maxWaves);
-                if (GameManager.Instance != null)
-                {
-                    GameManager.Instance.SaveCheckpoint();
-                }
-            }
-        }
-        GUILayout.EndArea();
     }
 }

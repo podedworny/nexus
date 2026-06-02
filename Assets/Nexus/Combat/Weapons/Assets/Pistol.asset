@@ -22,12 +22,12 @@ MonoBehaviour:
   spawnScale: {x: 1.1, y: 1.1, z: 1.1}
   cameraAimOffset: {x: 0, y: 0, z: 0}
   cameraAimRotation: {x: 0, y: 0, z: 0}
-  damage: 15
-  fireRate: 0.5
+  damage: 30
+  fireRate: 0.4
   range: 100
   isAutomatic: 0
   magazineSize: 15
-  maxReserveAmmo: 90
+  maxReserveAmmo: 180
   reloadTime: 1.7
   recoilVertical: 1
   recoilHorizontal: 0.3

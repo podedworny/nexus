@@ -50,9 +50,9 @@ public class EnemySpawner : MonoBehaviour
 
         WaveManager.Instance.currentZombiesAlive = totalZombies;
 
-        float baseHealth = 100f + (waveNumber * 5f);
-        float baseDamage = 15f + (waveNumber * 1.5f);
-        float baseSpeed = 1.5f + (waveNumber * 0.1f);
+        float baseHealth = 100f + (waveNumber * 10f);
+        float baseDamage = 10f + (waveNumber * 1.5f);
+        float baseSpeed = 2.0f + (waveNumber * 0.05f);
 
         int spawnedBosses = 0;
         int spawnedMiniBosses = 0;
@@ -66,13 +66,15 @@ public class EnemySpawner : MonoBehaviour
             float finalHealth = baseHealth;
             float finalDamage = baseDamage;
             float finalSpeed = baseSpeed;
+            int reward = 15 + waveNumber;
 
             if (spawnedBosses < bossCount)
             {
-                finalHealth *= 4f;
+                finalHealth *= 5f;
                 finalDamage *= 2.5f;
-                finalSpeed *= 1.2f;
-                spawnedZombie.transform.localScale = new Vector3(1.8f, 1.8f, 1.8f);
+                finalSpeed *= 1.1f;
+                reward = 200 + (waveNumber * 10);
+                spawnedZombie.transform.localScale = new Vector3(2.0f, 2.0f, 2.0f);
 
                 SetAgentColor(spawnedZombie, Color.red);
                 AddAura(spawnedZombie, Color.red, 2.5f);
@@ -81,10 +83,11 @@ public class EnemySpawner : MonoBehaviour
             }
             else if (spawnedMiniBosses < miniBossCount)
             {
-                finalHealth *= 2f;
+                finalHealth *= 2.5f;
                 finalDamage *= 1.5f;
-                finalSpeed *= 1.1f;
-                spawnedZombie.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
+                finalSpeed *= 1.05f;
+                reward = 75 + (waveNumber * 5);
+                spawnedZombie.transform.localScale = new Vector3(1.4f, 1.4f, 1.4f);
 
                 Color orange = new Color(1f, 0.5f, 0f);
                 SetAgentColor(spawnedZombie, orange);
@@ -113,7 +116,7 @@ public class EnemySpawner : MonoBehaviour
             }
 
             ZombieHealth health = spawnedZombie.GetComponent<ZombieHealth>();
-            if (health != null) health.Initialize(finalHealth);
+            if (health != null) health.Initialize(finalHealth, reward);
 
             ZombieAI ai = spawnedZombie.GetComponent<ZombieAI>();
             if (ai != null) ai.Initialize(finalDamage, finalSpeed);
@@ -139,25 +142,25 @@ public class EnemySpawner : MonoBehaviour
     {
         GameObject auraObj = new GameObject("AuraEffect");
         auraObj.transform.SetParent(target.transform);
-        auraObj.transform.localPosition = new Vector3(0, 1f, 0); 
+        auraObj.transform.localPosition = new Vector3(0, 1f, 0);
 
         ParticleSystem ps = auraObj.AddComponent<ParticleSystem>();
-        
+
         var main = ps.main;
-        main.startColor = new Color(auraColor.r, auraColor.g, auraColor.b, 0.4f); 
-        main.startSize = new ParticleSystem.MinMaxCurve(1.5f, 2.5f); 
-        main.startSpeed = 0.02f; 
-        main.startLifetime = 4f; 
+        main.startColor = new Color(auraColor.r, auraColor.g, auraColor.b, 0.4f);
+        main.startSize = new ParticleSystem.MinMaxCurve(1.5f, 2.5f);
+        main.startSpeed = 0.02f;
+        main.startLifetime = 4f;
         main.simulationSpace = ParticleSystemSimulationSpace.Local;
         main.loop = true;
 
         var emission = ps.emission;
-        emission.rateOverTime = 8f; 
+        emission.rateOverTime = 8f;
 
         var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Sphere; 
+        shape.shapeType = ParticleSystemShapeType.Sphere;
         shape.radius = radius;
-        shape.radiusThickness = 0.1f; 
+        shape.radiusThickness = 0.1f;
 
         var colorOverLifetime = ps.colorOverLifetime;
         colorOverLifetime.enabled = true;
@@ -202,7 +205,7 @@ public class EnemySpawner : MonoBehaviour
             {
                 float dist = Vector2.Distance(new Vector2(x, y), center);
                 float alpha = Mathf.Clamp01(1f - (dist / radius));
-                alpha = alpha * alpha; 
+                alpha = alpha * alpha;
                 texture.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
             }
         }
