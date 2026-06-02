@@ -24,7 +24,7 @@ namespace Nexus.FinalCharacterController
         private static int rotationMismatchHash = Animator.StringToHash("rotationMismatch");
         private static int isAttackingHash = Animator.StringToHash("isAttacking");
         private static int isPlayingActionHash = Animator.StringToHash("isPlayingAction");
-        private int[] actionHashes;
+        private int[] actionHashes = new int[0];
 
         private Vector3 _currentBlendInput = Vector3.zero;
 
@@ -38,7 +38,6 @@ namespace Nexus.FinalCharacterController
             _playerState = GetComponent<PlayerState>();
             _playerController = GetComponent<PlayerController>();
             _playerActionsInput = GetComponent<PlayerActionsInput>();
-
         }
 
         private void Update()
@@ -69,7 +68,12 @@ namespace Nexus.FinalCharacterController
             _animator.SetBool(isFallingHash, isFalling);
             _animator.SetBool(isJumpingHash, isJumping);
             _animator.SetBool(isRotatingToTargetHash, _playerController.IsRotatingToTarget);
-            _animator.SetBool(isAttackingHash, _playerActionsInput.AttackPressed);
+
+            if (_playerActionsInput != null)
+            {
+                _animator.SetBool(isAttackingHash, _playerActionsInput.AttackPressed);
+            }
+
             _animator.SetBool(isPlayingActionHash, isPlayingAction);
 
             _animator.SetFloat(inputXHash, _currentBlendInput.x);

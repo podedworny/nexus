@@ -39,6 +39,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private PlayerController _playerController;
     private PlayerState _playerState;
     private PlayerStats _playerStats;
+    private PlayerLocomotionInput _locomotionInput;
 
     private bool _isConsuming = false;
     private float _consumableTimer = 0f;
@@ -51,6 +52,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         _playerController = GetComponent<PlayerController>();
         _playerState = GetComponent<PlayerState>();
         _playerStats = GetComponent<PlayerStats>();
+        _locomotionInput = GetComponent<PlayerLocomotionInput>();
     }
 
     private void OnEnable()
@@ -136,18 +138,38 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         if (_animator != null && _animator.GetBool("isAttacking") && Time.time >= _nextFireTime)
             _animator.SetBool("isAttacking", false);
 
-        if (_currentIndex <= 0) return;
+        if (_currentIndex <= 0 || _inventoryManager == null) return;
 
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
 
         if (currentItem is ConsumableData consumableData)
         {
-            if (_isShooting && _playerStats != null && _playerStats.currentHealth < _playerStats.GetActualMaxHealth())
+            if (_pendingShot && !_isConsuming)
             {
-                if (!_isConsuming)
+                _pendingShot = false;
+                _hasFiredThisClick = true;
+
+                if (_playerStats != null && _playerStats.currentHealth < _playerStats.GetActualMaxHealth())
                 {
                     _isConsuming = true;
                     _consumableTimer = 0f;
+
+                    if (_animator != null)
+                    {
+                        _animator.SetBool("HasWeapon", true);
+                        _animator.SetInteger("WeaponType", -1);
+                        _animator.SetTrigger("UseConsumable");
+                        _animator.SetBool("isUsingConsumable", true);
+                    }
+                }
+            }
+
+            if (_isConsuming)
+            {
+                if (_locomotionInput != null && _locomotionInput.MovementInput != Vector2.zero)
+                {
+                    CancelConsumable();
+                    return;
                 }
 
                 _consumableTimer += Time.deltaTime;
@@ -156,21 +178,13 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
                 {
                     _playerStats.Heal(consumableData.healAmount);
                     _inventoryManager.ConsumeItem(_currentIndex);
-                    _isConsuming = false;
-                    _consumableTimer = 0f;
-                    _isShooting = false;
-                    _hasFiredThisClick = true;
+                    CancelConsumable();
 
                     if (_inventoryManager.GetItem(_currentIndex) == null)
                     {
                         UnequipCurrent();
                     }
                 }
-            }
-            else
-            {
-                _isConsuming = false;
-                _consumableTimer = 0f;
             }
             return;
         }
@@ -186,6 +200,18 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         {
             if (_playerController != null && !_playerController.IsAlignedForShooting) return;
             Shoot();
+        }
+    }
+
+    private void CancelConsumable()
+    {
+        _isConsuming = false;
+        _consumableTimer = 0f;
+        if (_animator != null)
+        {
+            _animator.SetBool("isUsingConsumable", false);
+            _animator.SetBool("HasWeapon", false);
+            _animator.SetInteger("WeaponType", 0);
         }
     }
 
@@ -289,9 +315,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     public void PerformMeleeStrike()
     {
-        if (_currentIndex <= 0) { return; }
+        if (_currentIndex <= 0 || _inventoryManager == null) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
-        if (!(currentItem is MeleeWeaponData meleeWeapon)) { return; }
+        if (!(currentItem is MeleeWeaponData meleeWeapon)) return;
 
         float actualDamage = meleeWeapon.damage;
         if (GameManager.Instance != null) actualDamage *= GameManager.Instance.damageMultiplier;
@@ -315,6 +341,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     private void StartReload()
     {
+        if (_inventoryManager == null) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
         if (!(currentItem is WeaponData weaponData) || _ammoInSlots[_currentIndex] == weaponData.magazineSize || _reserveAmmo[_currentIndex] <= 0) return;
 
@@ -327,8 +354,9 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
     private void FinishReload()
     {
         _isReloading = false;
-        _animator.SetBool("isReloading", false);
+        if (_animator != null) _animator.SetBool("isReloading", false);
 
+        if (_inventoryManager == null) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
         if (currentItem is WeaponData weaponData)
         {
@@ -382,7 +410,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     private void UpdateUIAmmo()
     {
-        if (_uiManager != null)
+        if (_uiManager != null && _inventoryManager != null)
         {
             ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
             if (currentItem is WeaponData weaponData)
@@ -433,7 +461,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     public void OnAim(InputAction.CallbackContext context)
     {
-        if (_currentIndex <= 0) return;
+        if (_currentIndex <= 0 || _inventoryManager == null) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
         if (currentItem is MeleeWeaponData || currentItem is ConsumableData) return;
         if (_currentWeaponObject == null) return;
@@ -444,7 +472,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
     public void OnShoot(InputAction.CallbackContext context)
     {
-        if (_currentIndex <= 0) return;
+        if (_currentIndex <= 0 || _inventoryManager == null) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
 
         if (!(currentItem is ConsumableData) && _currentWeaponObject == null) return;
@@ -458,14 +486,12 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         else if (context.canceled)
         {
             _isShooting = false;
-            _isConsuming = false;
-            _consumableTimer = 0f;
         }
     }
 
     public void OnReload(InputAction.CallbackContext context)
     {
-        if (_currentIndex <= 0) return;
+        if (_currentIndex <= 0 || _inventoryManager == null) return;
         ItemData currentItem = _inventoryManager.GetItem(_currentIndex);
         if (!(currentItem is ConsumableData) && _currentWeaponObject == null) return;
 
@@ -528,9 +554,15 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
         CurrentAnimWeaponType = 0;
         if (_currentWeaponObject != null) Destroy(_currentWeaponObject);
         _currentIndex = 0; _isAimingInput = false; _isShooting = false; _pendingShot = false; _isReloading = false; _combatReadyTimer = 0f;
-        _isConsuming = false; _consumableTimer = 0f;
+        CancelConsumable();
         if (_playerController != null) _playerController.IsFiring = false;
-        if (_animator != null) { _animator.SetBool("HasWeapon", false); _animator.SetBool("isAiming", false); _animator.SetInteger("WeaponType", 0); _animator.SetBool("isReloading", false);}
+        if (_animator != null) {
+            _animator.SetBool("HasWeapon", false);
+            _animator.SetBool("isAiming", false);
+            _animator.SetInteger("WeaponType", 0);
+            _animator.SetBool("isReloading", false);
+            _animator.SetBool("isUsingConsumable", false);
+        }
         if (_uiManager != null) { _uiManager.UpdateActiveSlot(0); _uiManager.UpdateAmmoDisplay(-1, -1, 0); }
     }
 
@@ -558,7 +590,7 @@ public class WeaponManager : MonoBehaviour, PlayerControls.ICombatMapActions
 
             GUI.color = new Color(0.08f, 0.12f, 0.19f, 0.9f);
             GUI.DrawTexture(bgRect, tex);
-            
+
             GUI.color = new Color(0.91f, 0.78f, 0.25f, 1f);
             GUI.DrawTexture(fgRect, tex);
 

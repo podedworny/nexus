@@ -65,6 +65,14 @@ public class InventoryUI : MonoBehaviour, PlayerControls.IInventoryMapActions
         if (_inventoryManager != null) _inventoryManager.OnInventoryChanged -= UpdateInventoryIcons;
     }
 
+    private void Update()
+    {
+        if (_isOpen && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            ToggleInventory();
+        }
+    }
+
     public void OnToggleInventory(InputAction.CallbackContext context)
     {
         if (context.performed) ToggleInventory();

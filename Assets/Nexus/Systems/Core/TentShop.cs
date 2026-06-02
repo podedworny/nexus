@@ -91,9 +91,14 @@ public class TentShop : MonoBehaviour
         float dist = Vector3.Distance(transform.position, _playerTransform.position);
         bool isDay = WaveManager.Instance.currentState == WaveManager.GameState.Day;
 
-        if ((dist > interactRange || !isDay) && _isShopOpen)
+        if (_isShopOpen)
         {
-            ToggleShop();
+            bool escapePressed = Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+
+            if (dist > interactRange || !isDay || escapePressed)
+            {
+                ToggleShop();
+            }
         }
     }
 
@@ -149,7 +154,7 @@ public class TentShop : MonoBehaviour
             promptStyle.fontSize = 24;
             promptStyle.alignment = TextAnchor.MiddleCenter;
             promptStyle.normal.textColor = Color.white;
-            GUI.Label(new Rect(0, Screen.height / 2 + 50, Screen.width, 50), "Press [F] to Start Night | Press [T] for Shop", promptStyle);
+            GUI.Label(new Rect(0, Screen.height / 2 + 50, Screen.width, 50), "Press [F] to Start Night | Press [Q] for Shop", promptStyle);
         }
     }
 
