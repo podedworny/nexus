@@ -38,6 +38,8 @@ public class PlayerStats : MonoBehaviour
     private Vector3 _startPosition;
     private Quaternion _startRotation;
 
+    public Vector3 StartPosition => _startPosition;
+
     private void Awake()
     {
         _playerState = GetComponent<PlayerState>();
@@ -62,6 +64,36 @@ public class PlayerStats : MonoBehaviour
         UpdateMaxHealth();
         currentHealth = GetActualMaxHealth();
         currentStamina = maxStamina;
+
+        if (PlayerPrefs.GetInt("LoadSave", 0) == 1)
+        {
+            CharacterController cc = GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+
+            float x = PlayerPrefs.GetFloat("PlayerX", transform.position.x);
+            float y = PlayerPrefs.GetFloat("PlayerY", transform.position.y);
+            float z = PlayerPrefs.GetFloat("PlayerZ", transform.position.z);
+            transform.position = new Vector3(x, y, z);
+            Physics.SyncTransforms();
+
+            if (cc != null) cc.enabled = true;
+
+            currency = PlayerPrefs.GetInt("PlayerCurrency", currency);
+            currentHealth = PlayerPrefs.GetFloat("PlayerHealth", currentHealth);
+
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.currentLives = PlayerPrefs.GetInt("PlayerLives", GameManager.Instance.currentLives);
+            }
+
+            if (WaveManager.Instance != null)
+            {
+                WaveManager.Instance.currentWave = PlayerPrefs.GetInt("CurrentWave", WaveManager.Instance.currentWave);
+            }
+
+            PlayerPrefs.SetInt("LoadSave", 0);
+            PlayerPrefs.Save();
+        }
 
         OnHealthChanged?.Invoke(currentHealth, GetActualMaxHealth());
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
@@ -232,12 +264,16 @@ public class PlayerStats : MonoBehaviour
         if (_weaponManager != null) _weaponManager.enabled = false;
         if (_playerAnimation != null) _playerAnimation.TriggerDie();
 
-        Invoke(nameof(TriggerGameOver), 3f);
+        Invoke(nameof(ShowDeathMenuDelayed), 3f);
     }
 
-    private void TriggerGameOver()
+    private void ShowDeathMenuDelayed()
     {
-        if (GameManager.Instance != null) GameManager.Instance.LoseLife();
+        DeathMenuManager deathMenu = FindFirstObjectByType<DeathMenuManager>();
+        if (deathMenu != null)
+        {
+            deathMenu.ShowDeathMenu();
+        }
     }
 
     private void RespawnPlayer()
@@ -249,6 +285,7 @@ public class PlayerStats : MonoBehaviour
 
         transform.position = _startPosition;
         transform.rotation = _startRotation;
+        Physics.SyncTransforms();
 
         if (cc != null) cc.enabled = true;
 
@@ -261,19 +298,5 @@ public class PlayerStats : MonoBehaviour
 
         currentStamina = maxStamina;
         OnStaminaChanged?.Invoke(currentStamina, maxStamina);
-    }
-
-    private void OnGUI()
-    {
-        if (_isDead)
-        {
-            GUIStyle style = new GUIStyle();
-            style.fontSize = 100;
-            style.normal.textColor = Color.red;
-            style.alignment = TextAnchor.MiddleCenter;
-
-            string msg = (GameManager.Instance != null && GameManager.Instance.currentLives <= 0) ? "GAME OVER" : "YOU DIED";
-            GUI.Label(new Rect(0, 0, Screen.width, Screen.height), msg, style);
-        }
     }
 }

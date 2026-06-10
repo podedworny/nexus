@@ -94,6 +94,8 @@ namespace Nexus.FinalCharacterController
 
         private void Update()
         {
+            if (Time.timeScale == 0f) return;
+
             if (_stunTimer > 0f)
             {
                 _stunTimer -= Time.deltaTime;
@@ -207,6 +209,8 @@ namespace Nexus.FinalCharacterController
 
         private void LateUpdate()
         {
+            if (Time.timeScale == 0f) return;
+
             UpdateCameraRotation();
         }
 

@@ -86,6 +86,17 @@ public class WaveManager : MonoBehaviour
         currentState = GameState.TransitioningToDay;
         yield return StartCoroutine(dayNightController.RotateSun(false, false));
         currentWave++;
+
+        if (currentWave > maxWaves)
+        {
+            DeathMenuManager deathMenu = FindFirstObjectByType<DeathMenuManager>();
+            if (deathMenu != null)
+            {
+                deathMenu.ShowWinMenu();
+            }
+            yield break;
+        }
+
         currentState = GameState.Day;
         if (GameManager.Instance != null)
         {

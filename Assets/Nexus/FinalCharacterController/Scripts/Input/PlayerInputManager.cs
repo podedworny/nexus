@@ -28,7 +28,10 @@ namespace Nexus.FinalCharacterController
 
         private void OnDisable()
         {
-            PlayerControls.Disable();
+            if (PlayerControls != null)
+            {
+                PlayerControls.Disable();
+            }
         }
     }
 }

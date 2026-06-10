@@ -130,6 +130,8 @@ namespace Nexus.FinalCharacterController
         public void TriggerRespawn()
         {
             _isDead = false;
+
+            _animator.ResetTrigger(dieHash);
             _animator.Rebind();
             _animator.Update(0f);
 
