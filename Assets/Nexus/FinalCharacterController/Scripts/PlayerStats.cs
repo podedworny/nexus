@@ -7,6 +7,7 @@ public class PlayerStats : MonoBehaviour
     [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth;
+    public float hitStunDuration = 0.4f;
 
     [Header("Armor")]
     public float armorReduction = 0f;
@@ -31,6 +32,7 @@ public class PlayerStats : MonoBehaviour
     private PlayerLocomotionInput _input;
     private PlayerController _playerController;
     private WeaponManager _weaponManager;
+    private PlayerAnimation _playerAnimation;
     private bool _isDead = false;
 
     private Vector3 _startPosition;
@@ -42,6 +44,7 @@ public class PlayerStats : MonoBehaviour
         _input = GetComponent<PlayerLocomotionInput>();
         _playerController = GetComponent<PlayerController>();
         _weaponManager = GetComponent<WeaponManager>();
+        _playerAnimation = GetComponent<PlayerAnimation>();
 
         _startPosition = transform.position;
         _startRotation = transform.rotation;
@@ -193,6 +196,11 @@ public class PlayerStats : MonoBehaviour
         {
             Die();
         }
+        else
+        {
+            if (_playerAnimation != null) _playerAnimation.TriggerHit();
+            if (_playerController != null) _playerController.ApplyStun(hitStunDuration);
+        }
     }
 
     public void ConsumeStamina(float amount)
@@ -216,9 +224,19 @@ public class PlayerStats : MonoBehaviour
     private void Die()
     {
         _isDead = true;
+
+        CharacterController cc = GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = false;
+
         if (_playerController != null) _playerController.enabled = false;
         if (_weaponManager != null) _weaponManager.enabled = false;
+        if (_playerAnimation != null) _playerAnimation.TriggerDie();
 
+        Invoke(nameof(TriggerGameOver), 3f);
+    }
+
+    private void TriggerGameOver()
+    {
         if (GameManager.Instance != null) GameManager.Instance.LoseLife();
     }
 
@@ -236,6 +254,7 @@ public class PlayerStats : MonoBehaviour
 
         if (_playerController != null) _playerController.enabled = true;
         if (_weaponManager != null) _weaponManager.enabled = true;
+        if (_playerAnimation != null) _playerAnimation.TriggerRespawn();
 
         currentHealth = GetActualMaxHealth();
         UpdateMaxHealth();

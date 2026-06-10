@@ -24,6 +24,9 @@ namespace Nexus.FinalCharacterController
         private static int rotationMismatchHash = Animator.StringToHash("rotationMismatch");
         private static int isAttackingHash = Animator.StringToHash("isAttacking");
         private static int isPlayingActionHash = Animator.StringToHash("isPlayingAction");
+        private static int hitHash = Animator.StringToHash("Hit");
+        private static int dieHash = Animator.StringToHash("Die");
+
         private int[] actionHashes = new int[0];
 
         private Vector3 _currentBlendInput = Vector3.zero;
@@ -31,6 +34,8 @@ namespace Nexus.FinalCharacterController
         private float _sprintMaxBlendValue = 1.5f;
         private float _runMaxBlendValue = 1.0f;
         private float _walkMaxBlendValue = 0.5f;
+
+        private bool _isDead = false;
 
         private void Awake()
         {
@@ -42,6 +47,7 @@ namespace Nexus.FinalCharacterController
 
         private void Update()
         {
+            if (_isDead) return;
             UpdateAnimationState();
         }
 
@@ -80,6 +86,66 @@ namespace Nexus.FinalCharacterController
             _animator.SetFloat(inputYHash, _currentBlendInput.y);
             _animator.SetFloat(inputMagnitudeHash, _currentBlendInput.magnitude);
             _animator.SetFloat(rotationMismatchHash, _playerController.RotationMismatch);
+        }
+
+        public void TriggerHit()
+        {
+            _animator.SetTrigger(hitHash);
+        }
+
+        public void TriggerDie()
+        {
+            _isDead = true;
+
+            _animator.SetBool(isIdlingHash, false);
+            _animator.SetBool(isFallingHash, false);
+            _animator.SetBool(isJumpingHash, false);
+            _animator.SetBool(isGroundedHash, true);
+            _animator.SetBool(isRotatingToTargetHash, false);
+            _animator.SetBool(isAttackingHash, false);
+            _animator.SetBool(isPlayingActionHash, false);
+            _animator.SetFloat(inputXHash, 0f);
+            _animator.SetFloat(inputYHash, 0f);
+            _animator.SetFloat(inputMagnitudeHash, 0f);
+            _animator.SetFloat(rotationMismatchHash, 0f);
+
+            _animator.ResetTrigger(hitHash);
+            _animator.SetTrigger(dieHash);
+
+            int deathLayerIndex = _animator.GetLayerIndex("Death");
+
+            for (int i = 1; i < _animator.layerCount; i++)
+            {
+                if (i == deathLayerIndex)
+                {
+                    _animator.SetLayerWeight(i, 1f);
+                }
+                else
+                {
+                    _animator.SetLayerWeight(i, 0f);
+                }
+            }
+        }
+
+        public void TriggerRespawn()
+        {
+            _isDead = false;
+            _animator.Rebind();
+            _animator.Update(0f);
+
+            int deathLayerIndex = _animator.GetLayerIndex("Death");
+
+            for (int i = 1; i < _animator.layerCount; i++)
+            {
+                if (i == deathLayerIndex)
+                {
+                    _animator.SetLayerWeight(i, 0f);
+                }
+                else
+                {
+                    _animator.SetLayerWeight(i, 1f);
+                }
+            }
         }
     }
 }

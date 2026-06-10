@@ -75,6 +75,9 @@ namespace Nexus.FinalCharacterController
 
         private PlayerMovementState _lastMovementState = PlayerMovementState.Falling;
 
+        private float _stunTimer = 0f;
+        public bool IsStunned => _stunTimer > 0f;
+
         private void Awake()
         {
             _playerLocomotionInput = GetComponent<PlayerLocomotionInput>();
@@ -84,8 +87,18 @@ namespace Nexus.FinalCharacterController
             _stepOffset = _characterController.stepOffset;
         }
 
+        public void ApplyStun(float duration)
+        {
+            _stunTimer = duration;
+        }
+
         private void Update()
         {
+            if (_stunTimer > 0f)
+            {
+                _stunTimer -= Time.deltaTime;
+            }
+
             UpdateMovementState();
             HandleVerticalMovement();
             HandleLateralMovement();
@@ -96,9 +109,9 @@ namespace Nexus.FinalCharacterController
             _lastMovementState = _playerState.CurrentPlayerMovementState;
 
             bool canRun = CanRun();
-            bool isMovementInput = _playerLocomotionInput.MovementInput != Vector2.zero;
+            bool isMovementInput = _playerLocomotionInput.MovementInput != Vector2.zero && !IsStunned;
             bool isMovingLaterally = IsMovingLaterally();
-            bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally && _playerLocomotionInput.MovementInput.y > 0;
+            bool isSprinting = _playerLocomotionInput.SprintToggledOn && isMovingLaterally && _playerLocomotionInput.MovementInput.y > 0 && !IsStunned;
             bool isGrounded = IsGrounded();
 
             PlayerMovementState lateralState = isSprinting ? PlayerMovementState.Sprinting :
@@ -133,7 +146,7 @@ namespace Nexus.FinalCharacterController
             if (isGrounded && _verticalVelocity < 0)
                 _verticalVelocity = -_antiBump;
 
-            if (_playerLocomotionInput.JumpPressed && isGrounded)
+            if (_playerLocomotionInput.JumpPressed && isGrounded && !IsStunned)
             {
                 _verticalVelocity += Mathf.Sqrt(jumpSpeed * 3 * gravity);
                 _jumpedLastFrame = true;
@@ -164,7 +177,8 @@ namespace Nexus.FinalCharacterController
 
             Vector3 cameraForwardXZ = new Vector3(_playerCamera.transform.forward.x, 0f, _playerCamera.transform.forward.z).normalized;
             Vector3 cameraRightXZ = new Vector3(_playerCamera.transform.right.x, 0f, _playerCamera.transform.right.z).normalized;
-            Vector3 movementDirection = cameraRightXZ * _playerLocomotionInput.MovementInput.x + cameraForwardXZ * _playerLocomotionInput.MovementInput.y;
+
+            Vector3 movementDirection = IsStunned ? Vector3.zero : cameraRightXZ * _playerLocomotionInput.MovementInput.x + cameraForwardXZ * _playerLocomotionInput.MovementInput.y;
 
             Vector3 movementDelta = lateralAcceleration * Time.deltaTime * movementDirection;
             Vector3 newVelocity = _characterController.velocity + movementDelta;
@@ -214,22 +228,22 @@ namespace Nexus.FinalCharacterController
 
             bool isShootingIntent = _weaponManager != null && _weaponManager.IsShootingIntent;
 
-            if (IsAiming)
+            if (IsAiming && !IsStunned)
             {
                 transform.rotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
                 _playerTargetRotation.x = transform.eulerAngles.y - _currentAimOffset;
             }
-            else if (isShootingIntent)
+            else if (isShootingIntent && !IsStunned)
             {
                 Quaternion targetRotation = Quaternion.Euler(0f, _cameraRotation.x + _currentAimOffset, 0f);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, playerModelRotationSpeed * 1.5f * Time.deltaTime);
                 _playerTargetRotation.x = transform.eulerAngles.y - _currentAimOffset;
             }
-            else if (!isIdling)
+            else if (!isIdling && !IsStunned)
             {
                 RotatePlayerToTarget();
             }
-            else if (Mathf.Abs(RotationMismatch) > rotationTolerance || IsRotatingToTarget)
+            else if ((Mathf.Abs(RotationMismatch) > rotationTolerance || IsRotatingToTarget) && !IsStunned)
             {
                 UpdateIdleRotation(rotationTolerance);
             }
